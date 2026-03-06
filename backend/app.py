@@ -8,10 +8,16 @@ from routes import agent_bp
 # Load environment variables
 load_dotenv()
 
-def create_app():
-
+def create_app(config_name=None):
+    """Flask app factory"""
+    if config_name is None:
+        config_name = os.getenv('FLASK_ENV', 'development')
+    
     app = Flask(__name__)
-        
+    
+    # Load configuration
+    app.config.from_object(config[config_name])
+    
     # Enable CORS
     CORS(app)
     
@@ -22,7 +28,12 @@ def create_app():
     @app.route('/')
     def home():
         return jsonify({
-            'message': 'Welcome to Flask App',
+            'message': 'Welcome to Flask Agentic AI API',
+            'endpoints': {
+                'agent_health': '/api/agent/health',
+                'query': '/api/agent/query',
+                'chat': '/api/agent/chat'
+            }
         })
     
     # Error handlers
