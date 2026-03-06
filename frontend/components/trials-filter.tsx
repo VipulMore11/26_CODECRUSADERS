@@ -208,12 +208,12 @@ export function TrialsFilter({ filters, onFilterChange, totalResults }: TrialsFi
       {/* Search Bar */}
       <div className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search trials by keyword, condition, or sponsor..."
             value={filters.search}
             onChange={(e) => updateFilter("search", e.target.value)}
-            className="pl-10"
+            className="pl-12 py-7 text-base rounded-xl border-2"
           />
         </div>
 
@@ -324,21 +324,21 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
   ].filter(Boolean).length
 
   return (
-    <div className="hidden lg:block">
-      <div className="sticky top-24 space-y-6 rounded-xl border border-border bg-card p-6">
+    <div className="hidden lg:block w-80">
+      <div className="sticky top-28 space-y-8 rounded-2xl border-2 border-border bg-card p-8 shadow-sm">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Filters</h3>
+          <h3 className="text-xl font-bold">Filters</h3>
           {activeFilterCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-sm font-semibold text-primary">
               Clear all
             </Button>
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label>Status</Label>
+        <div className="space-y-3">
+          <Label className="text-base font-bold">Status</Label>
           <Select value={filters.status || "all"} onValueChange={(v) => updateFilter("status", v)}>
-            <SelectTrigger>
+            <SelectTrigger className="h-12 text-base rounded-xl border-2">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -351,10 +351,10 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Phase</Label>
+        <div className="space-y-3">
+          <Label className="text-base font-bold">Phase</Label>
           <Select value={filters.phase || "all"} onValueChange={(v) => updateFilter("phase", v)}>
-            <SelectTrigger>
+            <SelectTrigger className="h-12 text-base rounded-xl border-2">
               <SelectValue placeholder="All Phases" />
             </SelectTrigger>
             <SelectContent>
@@ -367,10 +367,10 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Condition</Label>
+        <div className="space-y-3">
+          <Label className="text-base font-bold">Condition</Label>
           <Select value={filters.condition || "all"} onValueChange={(v) => updateFilter("condition", v)}>
-            <SelectTrigger>
+            <SelectTrigger className="h-12 text-base rounded-xl border-2">
               <SelectValue placeholder="All Conditions" />
             </SelectTrigger>
             <SelectContent>
@@ -383,23 +383,23 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Location</Label>
+        <div className="space-y-3">
+          <Label className="text-base font-bold">Location</Label>
           <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <MapPin className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="City, State or ZIP"
               value={filters.location}
               onChange={(e) => updateFilter("location", e.target.value)}
-              className="pl-10"
+              className="pl-12 h-12 text-base rounded-xl border-2"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Distance</Label>
+        <div className="space-y-3">
+          <Label className="text-base font-bold">Distance</Label>
           <Select value={filters.distance || "all"} onValueChange={(v) => updateFilter("distance", v)}>
-            <SelectTrigger>
+            <SelectTrigger className="h-12 text-base rounded-xl border-2">
               <SelectValue placeholder="Any Distance" />
             </SelectTrigger>
             <SelectContent>
@@ -412,9 +412,9 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
           </Select>
         </div>
 
-        <div className="space-y-3">
-          <Label>Population Tags</Label>
-          <div className="space-y-2">
+        <div className="space-y-4">
+          <Label className="text-base font-bold">Population Tags</Label>
+          <div className="space-y-3">
             {availableTags.map((tag) => (
               <div key={tag} className="flex items-center space-x-2">
                 <Checkbox
@@ -424,7 +424,7 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
                 />
                 <label
                   htmlFor={`sidebar-${tag}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   {tag}
                 </label>

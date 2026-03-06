@@ -8,10 +8,10 @@ import { PrivacyWarningModal } from "@/components/privacy-warning-modal"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Shield, 
-  FileText, 
-  ClipboardList, 
+import {
+  Shield,
+  FileText,
+  ClipboardList,
   Activity,
   TrendingUp,
   Users,
@@ -34,60 +34,60 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8">
+    <div className="mx-auto max-w-[1600px] px-8 py-8">
       <PrivacyWarningModal />
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Patient Analysis Dashboard</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Patient Analysis Dashboard</h1>
+        <p className="mt-4 text-base text-muted-foreground">
           Upload medical records and enter patient information for clinical trial matching
         </p>
       </div>
 
       {/* Quick Stats */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="flex items-center gap-4 p-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-              <Activity className="h-6 w-6 text-primary" />
+      <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-2">
+          <CardContent className="flex items-center gap-6 p-8">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
+              <Activity className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold">2,847</p>
-              <p className="text-sm text-muted-foreground">Active Trials</p>
+              <p className="text-3xl font-black">2,847</p>
+              <p className="text-base font-medium text-muted-foreground">Active Trials</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 p-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-success/10">
-              <TrendingUp className="h-6 w-6 text-success" />
+        <Card className="border-2">
+          <CardContent className="flex items-center gap-6 p-8">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-success/10">
+              <TrendingUp className="h-7 w-7 text-success" />
             </div>
             <div>
-              <p className="text-2xl font-bold">94.7%</p>
-              <p className="text-sm text-muted-foreground">Match Accuracy</p>
+              <p className="text-3xl font-black">94.7%</p>
+              <p className="text-base font-medium text-muted-foreground">Match Accuracy</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 p-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10">
-              <Users className="h-6 w-6 text-accent" />
+        <Card className="border-2">
+          <CardContent className="flex items-center gap-6 p-8">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent/10">
+              <Users className="h-7 w-7 text-accent" />
             </div>
             <div>
-              <p className="text-2xl font-bold">15,420</p>
-              <p className="text-sm text-muted-foreground">Patients Matched</p>
+              <p className="text-3xl font-black">15,420</p>
+              <p className="text-base font-medium text-muted-foreground">Patients Matched</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 p-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-warning/10">
-              <Clock className="h-6 w-6 text-warning" />
+        <Card className="border-2">
+          <CardContent className="flex items-center gap-6 p-8">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-warning/10">
+              <Clock className="h-7 w-7 text-warning" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{"<"}2s</p>
-              <p className="text-sm text-muted-foreground">Avg. Analysis Time</p>
+              <p className="text-3xl font-black">{"<"}2s</p>
+              <p className="text-base font-medium text-muted-foreground">Avg. Analysis Time</p>
             </div>
           </CardContent>
         </Card>
@@ -98,9 +98,9 @@ export default function DashboardPage() {
         <CardContent className="flex items-start gap-4 p-6">
           <Shield className="h-6 w-6 shrink-0 text-primary" />
           <div>
-            <h3 className="font-semibold">Data Security Guaranteed</h3>
+            <h3 className="text-lg font-bold">Data Security Guaranteed</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              All patient data is anonymized using UUID assignment. Personal identifiers are automatically 
+              All patient data is anonymized using UUID assignment. Personal identifiers are automatically
               removed using regex pattern matching. Your data never leaves your browser during processing.
             </p>
           </div>
@@ -111,20 +111,20 @@ export default function DashboardPage() {
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Tabs defaultValue="upload" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="upload" className="gap-2">
-                <FileText className="h-4 w-4" />
+            <TabsList className="grid w-full grid-cols-2 h-14 rounded-xl">
+              <TabsTrigger value="upload" className="gap-2 text-base font-semibold">
+                <FileText className="h-5 w-5" />
                 Upload Documents
               </TabsTrigger>
-              <TabsTrigger value="manual" className="gap-2">
-                <ClipboardList className="h-4 w-4" />
+              <TabsTrigger value="manual" className="gap-2 text-base font-semibold">
+                <ClipboardList className="h-5 w-5" />
                 Manual Entry
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="upload" className="space-y-6">
               <FileUpload onFilesUploaded={handleFilesUploaded} />
-              
+
               {uploadedFiles.length > 0 && (
                 <Card>
                   <CardHeader>

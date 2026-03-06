@@ -310,8 +310,8 @@ export default function TrialDetailsPage() {
         <div className="min-h-screen bg-background text-foreground">
             <Navigation />
 
-            <main className="pt-24 pb-16">
-                <div className="container mx-auto max-w-5xl px-6">
+            <main className="pt-20 pb-12">
+                <div className="container mx-auto max-w-[1440px] px-6">
                     {/* Back Button */}
                     <Button
                         variant="ghost"

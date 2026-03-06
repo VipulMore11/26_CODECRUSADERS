@@ -1,11 +1,11 @@
 "use client"
 
-import { 
-  FileText, 
-  Brain, 
-  MapPin, 
-  Download, 
-  Shield, 
+import {
+  FileText,
+  Brain,
+  MapPin,
+  Download,
+  Shield,
   Stethoscope,
   ScanLine,
   BarChart3
@@ -56,9 +56,9 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section className="border-t border-border bg-card/30 py-20 md:py-32">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="mx-auto max-w-2xl text-center">
+    <section className="border-t border-border bg-card/30 py-32 md:py-48">
+      <div className="mx-auto max-w-[1600px] px-6">
+        <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
             Comprehensive Trial Matching Platform
           </h2>
@@ -71,13 +71,13 @@ export function FeaturesSection() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:bg-card/80"
+              className="group rounded-2xl border border-border bg-card p-10 transition-all hover:border-primary/50 hover:bg-card/80"
             >
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                 <feature.icon className="h-6 w-6" />
               </div>
-              <h3 className="mb-2 font-semibold">{feature.title}</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">
+              <h3 className="mb-3 text-lg font-semibold">{feature.title}</h3>
+              <p className="text-base leading-relaxed text-muted-foreground">
                 {feature.description}
               </p>
             </div>

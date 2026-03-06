@@ -16,11 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { 
-  Download, 
-  ArrowLeft, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Download,
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
   FileText,
   Brain,
   Shield,
@@ -163,7 +163,7 @@ export default function ResultsPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <Progress value={progress} className="h-3" />
-              
+
               <div className="space-y-3">
                 {[
                   { label: "Extracting medical data", done: progress > 20 },
@@ -200,7 +200,7 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-20">
-        <div className="mx-auto max-w-5xl px-6 py-8">
+        <div className="mx-auto max-w-[1440px] px-6 py-8">
           {/* Header */}
           <div className="mb-8">
             <Link href="/dashboard">

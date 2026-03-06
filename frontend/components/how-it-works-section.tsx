@@ -25,10 +25,10 @@ const steps = [
 
 export function HowItWorksSection() {
   return (
-    <section className="py-20 md:py-32">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+    <section className="py-32 md:py-48">
+      <div className="mx-auto max-w-[1600px] px-6">
+        <div className="mx-auto max-w-4xl text-center">
+          <h2 className="text-4xl font-bold tracking-tight md:text-5xl">
             How It Works
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -47,8 +47,8 @@ export function HowItWorksSection() {
                   <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full border-2 border-primary bg-background text-3xl font-bold text-primary">
                     {step.step}
                   </div>
-                  <h3 className="mt-6 text-lg font-semibold">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  <h3 className="mt-8 text-xl font-semibold">{step.title}</h3>
+                  <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                     {step.description}
                   </p>
                 </div>

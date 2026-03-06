@@ -19,10 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { 
-  Stethoscope, 
-  Brain, 
-  FileText, 
+import {
+  Stethoscope,
+  Brain,
+  FileText,
   ArrowRight,
   Shield,
   AlertTriangle,
@@ -174,11 +174,11 @@ export default function AnalyzePage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-20">
-        <div className="mx-auto max-w-5xl px-6 py-8">
+        <div className="mx-auto max-w-[1440px] px-8 py-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight">Medical Procedure Analysis</h1>
-            <p className="mt-2 text-muted-foreground">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Medical Procedure Analysis</h1>
+            <p className="mt-4 text-base text-muted-foreground">
               Upload your medical records to get AI-powered recommendations for treatment procedures
             </p>
           </div>
@@ -188,9 +188,9 @@ export default function AnalyzePage() {
             <CardContent className="flex items-start gap-4 p-6">
               <Shield className="h-6 w-6 shrink-0 text-primary" />
               <div>
-                <h3 className="font-semibold">Your Data is Protected</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  All medical records are processed with complete anonymization. No personal information 
+                <h3 className="text-lg font-bold">Your Data is Protected</h3>
+                <p className="mt-2 text-base text-muted-foreground">
+                  All medical records are processed with complete anonymization. No personal information
                   is stored or associated with your analysis. Results are generated locally and securely.
                 </p>
               </div>
@@ -201,35 +201,35 @@ export default function AnalyzePage() {
             <div className="space-y-8">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold">
+                    <FileText className="h-6 w-6" />
                     Upload Medical Records
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-base mt-2">
                     Upload your diagnosis reports, imaging results, and lab work for comprehensive analysis
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <FileUpload onFilesUploaded={() => {}} />
+                  <FileUpload onFilesUploaded={() => { }} />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Stethoscope className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold">
+                    <Stethoscope className="h-6 w-6" />
                     Condition Details
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-base mt-2">
                     Provide information about your diagnosis to improve recommendation accuracy
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="condition">Primary Condition</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="condition" className="text-base font-semibold">Primary Condition</Label>
                       <Select value={condition} onValueChange={setCondition}>
-                        <SelectTrigger id="condition">
+                        <SelectTrigger id="condition" className="h-12 text-base rounded-xl border-2">
                           <SelectValue placeholder="Select condition" />
                         </SelectTrigger>
                         <SelectContent>
@@ -243,10 +243,10 @@ export default function AnalyzePage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="stage">Stage (if applicable)</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="stage" className="text-base font-semibold">Stage (if applicable)</Label>
                       <Select value={stage} onValueChange={setStage}>
-                        <SelectTrigger id="stage">
+                        <SelectTrigger id="stage" className="h-12 text-base rounded-xl border-2">
                           <SelectValue placeholder="Select stage" />
                         </SelectTrigger>
                         <SelectContent>
@@ -260,21 +260,22 @@ export default function AnalyzePage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Additional Information</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="notes" className="text-base font-semibold">Additional Information</Label>
                     <Textarea
                       id="notes"
                       placeholder="Enter any relevant medical history, previous treatments, current symptoms, or specific concerns..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      rows={4}
+                      rows={6}
+                      className="text-base rounded-xl border-2 p-4"
                     />
                   </div>
 
-                  <Button onClick={handleStartAnalysis} className="w-full gap-2" size="lg">
-                    <Brain className="h-5 w-5" />
+                  <Button onClick={handleStartAnalysis} className="w-full gap-3 py-8 text-lg font-bold rounded-2xl" size="lg">
+                    <Brain className="h-6 w-6" />
                     Analyze Treatment Options
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-5 w-5" />
                   </Button>
                 </CardContent>
               </Card>
@@ -294,7 +295,7 @@ export default function AnalyzePage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <Progress value={progress} className="h-3" />
-                
+
                 <div className="space-y-3">
                   {[
                     { label: "Processing medical records", done: progress > 15 },
@@ -354,7 +355,7 @@ export default function AnalyzePage() {
                   <div>
                     <h3 className="font-semibold">Medical Disclaimer</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      This analysis is for informational purposes only and should not replace professional medical advice. 
+                      This analysis is for informational purposes only and should not replace professional medical advice.
                       Always consult with qualified healthcare providers before making treatment decisions.
                     </p>
                   </div>

@@ -10,44 +10,44 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/trials", label: "Browse Trials", icon: Beaker },
-    { href: "/upload", label: "Upload Records", icon: FileText },
-    { href: "/procedure", label: "Procedure Analysis", icon: Stethoscope },
+    { href: "/dashboard", label: "Upload Records", icon: FileText },
+    { href: "/analyze", label: "Procedure Analysis", icon: Stethoscope },
   ]
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+      <div className="mx-auto max-w-[1600px] px-6 sm:px-8 lg:px-10">
+        <div className="flex h-20 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Activity className="h-5 w-5 text-primary-foreground" />
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary">
+              <Activity className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold tracking-tight">
+            <span className="text-2xl font-bold tracking-tight">
               TrialMatch<span className="text-primary">AI</span>
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-2 md:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="flex items-center gap-3 rounded-xl px-5 py-3 text-lg font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground hover:scale-105 transform transition-transform"
               >
-                <link.icon className="h-4 w-4" />
+                <link.icon className="h-5 w-5" />
                 {link.label}
               </Link>
             ))}
           </div>
 
           {/* CTA Buttons */}
-          <div className="hidden items-center gap-3 md:flex">
-            <Button variant="ghost" size="sm">
+          <div className="hidden items-center gap-4 md:flex">
+            <Button variant="ghost" size="lg" className="text-lg font-semibold px-6">
               Sign In
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg font-bold px-8 py-6 rounded-xl shadow-lg transition-all">
               Get Started
             </Button>
           </div>
@@ -55,9 +55,9 @@ export function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-secondary md:hidden"
+            className="rounded-xl p-3 text-muted-foreground hover:bg-secondary md:hidden"
           >
-            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
       </div>
@@ -65,23 +65,23 @@ export function Navbar() {
       {/* Mobile Navigation */}
       {isOpen && (
         <div className="border-t border-border bg-background md:hidden">
-          <div className="space-y-1 px-4 py-3">
+          <div className="space-y-2 px-6 py-4">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="flex items-center gap-4 rounded-xl px-4 py-3 text-lg font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 onClick={() => setIsOpen(false)}
               >
-                <link.icon className="h-4 w-4" />
+                <link.icon className="h-5 w-5" />
                 {link.label}
               </Link>
             ))}
-            <div className="flex gap-2 pt-3">
-              <Button variant="ghost" size="sm" className="flex-1">
+            <div className="flex flex-col gap-3 pt-4">
+              <Button variant="ghost" size="lg" className="w-full text-lg">
                 Sign In
               </Button>
-              <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90">
+              <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-lg py-7 rounded-xl">
                 Get Started
               </Button>
             </div>

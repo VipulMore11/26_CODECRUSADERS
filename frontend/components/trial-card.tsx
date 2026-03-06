@@ -3,11 +3,11 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { 
-  MapPin, 
-  Calendar, 
-  Users, 
-  Building2, 
+import {
+  MapPin,
+  Calendar,
+  Users,
+  Building2,
   ChevronRight,
   Bookmark,
   ExternalLink
@@ -39,36 +39,36 @@ export function TrialCard({ trial, showMatchScore = false }: TrialCardProps) {
   const enrollmentPercentage = (trial.currentEnrollment / trial.enrollmentTarget) * 100
 
   return (
-    <Card className="group transition-all hover:border-primary/50 hover:shadow-lg">
-      <CardHeader className="pb-3">
+    <Card className="group transition-all hover:border-primary/50 hover:shadow-xl border-2">
+      <CardHeader className="pb-4 pt-6 px-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <Badge 
+              <Badge
                 variant={trial.status === "Recruiting" ? "default" : "secondary"}
-                className={trial.status === "Recruiting" ? "bg-success text-success-foreground" : ""}
+                className={trial.status === "Recruiting" ? "bg-success text-success-foreground px-3 py-1 text-xs" : "px-3 py-1 text-xs"}
               >
                 {trial.status}
               </Badge>
-              <Badge variant="outline">{trial.phase}</Badge>
+              <Badge variant="outline" className="px-3 py-1 text-xs">{trial.phase}</Badge>
               {showMatchScore && trial.matchScore && (
-                <Badge className="bg-primary text-primary-foreground">
+                <Badge className="bg-primary text-primary-foreground px-3 py-1 text-xs">
                   {trial.matchScore}% Match
                 </Badge>
               )}
             </div>
-            <h3 className="font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+            <h3 className="text-xl font-bold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
               {trial.title}
             </h3>
           </div>
-          <Button variant="ghost" size="icon" className="shrink-0" aria-label="Bookmark trial">
-            <Bookmark className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10" aria-label="Bookmark trial">
+            <Bookmark className="h-5 w-5" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Building2 className="h-4 w-4 shrink-0" />
+      <CardContent className="space-y-6 px-6 pb-8">
+        <div className="flex items-center gap-2 text-base text-muted-foreground">
+          <Building2 className="h-5 w-5 shrink-0" />
           <span className="truncate">{trial.sponsor}</span>
         </div>
 
@@ -88,9 +88,9 @@ export function TrialCard({ trial, showMatchScore = false }: TrialCardProps) {
         {trial.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {trial.tags.map((tag) => (
-              <Badge 
-                key={tag} 
-                variant="outline" 
+              <Badge
+                key={tag}
+                variant="outline"
                 className="text-xs border-accent text-accent"
               >
                 {tag}
@@ -126,22 +126,22 @@ export function TrialCard({ trial, showMatchScore = false }: TrialCardProps) {
             <span className="font-medium">{Math.round(enrollmentPercentage)}%</span>
           </div>
           <div className="h-1.5 rounded-full bg-secondary">
-            <div 
+            <div
               className="h-full rounded-full bg-primary transition-all"
               style={{ width: `${Math.min(enrollmentPercentage, 100)}%` }}
             />
           </div>
         </div>
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-3 pt-4">
           <Link href={`/trials/${trial.id}`} className="flex-1">
-            <Button variant="outline" className="w-full gap-2">
+            <Button variant="outline" size="lg" className="w-full gap-2 py-6 text-base font-semibold">
               View Details
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-5 w-5" />
             </Button>
           </Link>
-          <Button variant="ghost" size="icon" aria-label="Open in new tab">
-            <ExternalLink className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-12 w-12 shrink-0 border border-border" aria-label="Open in new tab">
+            <ExternalLink className="h-5 w-5" />
           </Button>
         </div>
       </CardContent>

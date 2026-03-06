@@ -211,11 +211,11 @@ export default function TrialsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-20">
-        <div className="mx-auto max-w-7xl px-6 py-8">
+        <div className="mx-auto max-w-[1600px] px-8 py-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight">Clinical Trials Explorer</h1>
-            <p className="mt-2 text-muted-foreground">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Clinical Trials Explorer</h1>
+            <p className="mt-4 text-base text-muted-foreground">
               Browse and filter through thousands of active clinical trials worldwide
             </p>
           </div>
@@ -239,7 +239,7 @@ export default function TrialsPage() {
 
               {/* Trials Grid */}
               {filteredTrials.length > 0 ? (
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
                   {filteredTrials.map((trial) => (
                     <TrialCard key={trial.id} trial={trial} showMatchScore />
                   ))}
