@@ -193,7 +193,7 @@ export function TrialDetail({ trial, onBack }: TrialDetailProps) {
                 View on ClinicalTrials.gov
               </Button>
               <Button variant="outline" className="w-full gap-2" asChild>
-                <Link href="/upload">
+                <Link href="/dashboard">
                   <FileText className="h-4 w-4" />
                   Check My Eligibility
                 </Link>
@@ -236,7 +236,7 @@ export function TrialDetail({ trial, onBack }: TrialDetailProps) {
                 Upload your medical records to find trials that match your specific profile.
               </p>
               <Button asChild>
-                <Link href="/upload">Find My Matches</Link>
+                <Link href="/dashboard">Find My Matches</Link>
               </Button>
             </CardContent>
           </Card>

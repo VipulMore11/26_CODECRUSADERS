@@ -171,8 +171,8 @@ export default function AnalyzePage() {
     if (search) {
       const searchLower = search.toLowerCase()
       if (!treatment.name.toLowerCase().includes(searchLower) &&
-          !treatment.description.toLowerCase().includes(searchLower) &&
-          !treatment.conditions.some(c => c.toLowerCase().includes(searchLower))) {
+        !treatment.description.toLowerCase().includes(searchLower) &&
+        !treatment.conditions.some(c => c.toLowerCase().includes(searchLower))) {
         return false
       }
     }
@@ -209,7 +209,7 @@ export default function AnalyzePage() {
             Procedure Analysis Tool
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Evaluate medical procedures with AI-powered insights. Analyze success rates, 
+            Evaluate medical procedures with AI-powered insights. Analyze success rates,
             recovery times, costs, and make informed decisions about your treatment options.
           </p>
         </div>
@@ -234,8 +234,8 @@ export default function AnalyzePage() {
               All Categories
             </TabsTrigger>
             {categories.map(category => (
-              <TabsTrigger 
-                key={category} 
+              <TabsTrigger
+                key={category}
                 value={category}
                 className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
@@ -270,8 +270,8 @@ export default function AnalyzePage() {
         {/* Treatment Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredTreatments.map(treatment => (
-            <TreatmentCard 
-              key={treatment.id} 
+            <TreatmentCard
+              key={treatment.id}
               treatment={treatment}
               onClick={() => setSelectedTreatment(treatment)}
             />
@@ -512,7 +512,7 @@ function TreatmentDetail({ treatment, onBack }: { treatment: Treatment; onBack: 
           <div>
             <p className="font-medium text-foreground">Medical Disclaimer</p>
             <p className="text-sm text-muted-foreground">
-              This information is for educational purposes only and should not replace professional medical advice. 
+              This information is for educational purposes only and should not replace professional medical advice.
               Always consult with a qualified healthcare provider before starting any treatment.
             </p>
           </div>
@@ -522,7 +522,7 @@ function TreatmentDetail({ treatment, onBack }: { treatment: Treatment; onBack: 
       {/* CTA */}
       <div className="flex flex-col gap-4 sm:flex-row">
         <Button asChild className="flex-1 gap-2">
-          <Link href="/upload">
+          <Link href="/dashboard">
             <FileText className="h-4 w-4" />
             Check Compatibility with My Records
           </Link>

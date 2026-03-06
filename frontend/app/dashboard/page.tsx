@@ -64,11 +64,11 @@ export default function DashboardPage() {
   const router = useRouter()
   const [showPrivacyModal, setShowPrivacyModal] = useState(true)
   const [activeTab, setActiveTab] = useState("upload")
-  
+
   // File upload state
   const [files, setFiles] = useState<File[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  
+
   // Manual form state
   const [patientId, setPatientId] = useState("")
   const [age, setAge] = useState("")
@@ -189,7 +189,7 @@ export default function DashboardPage() {
               Before you proceed, please review our data handling practices.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
@@ -202,7 +202,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
                 <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
@@ -214,7 +214,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900">
                 <AlertTriangle className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
@@ -238,66 +238,15 @@ export default function DashboardPage() {
       </Dialog>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Quick Stats */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Activity className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">2,847</p>
-                <p className="text-sm text-muted-foreground">Active Trials</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10">
-                <Target className="h-6 w-6 text-green-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">94.7%</p>
-                <p className="text-sm text-muted-foreground">Match Accuracy</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10">
-                <Users className="h-6 w-6 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">15,420</p>
-                <p className="text-sm text-muted-foreground">Patients Matched</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10">
-                <Clock className="h-6 w-6 text-orange-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">500ms</p>
-                <p className="text-sm text-muted-foreground">Avg. Analysis Time</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Main Dashboard Card */}
-        <Card className="mx-auto max-w-4xl">
+        <Card className="mx-auto max-w-4xl mb-8">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Patient Analysis Dashboard</CardTitle>
             <CardDescription className="text-base">
               Upload medical records or enter patient information manually to find matching clinical trials
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2">
@@ -316,11 +265,10 @@ export default function DashboardPage() {
                 {/* Drop Zone */}
                 <div
                   {...getRootProps()}
-                  className={`cursor-pointer rounded-xl border-2 border-dashed p-12 text-center transition-all ${
-                    isDragActive
+                  className={`cursor-pointer rounded-xl border-2 border-dashed p-12 text-center transition-all ${isDragActive
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50 hover:bg-muted/50"
-                  }`}
+                    }`}
                 >
                   <input {...getInputProps()} />
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -569,6 +517,57 @@ export default function DashboardPage() {
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* Quick Stats */}
+        <div className="mx-auto max-w-4xl grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <Activity className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">2,847</p>
+                <p className="text-sm text-muted-foreground">Active Trials</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10">
+                <Target className="h-6 w-6 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">94.7%</p>
+                <p className="text-sm text-muted-foreground">Match Accuracy</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10">
+                <Users className="h-6 w-6 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">15,420</p>
+                <p className="text-sm text-muted-foreground">Patients Matched</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10">
+                <Clock className="h-6 w-6 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">500ms</p>
+                <p className="text-sm text-muted-foreground">Avg. Analysis Time</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </main>
 
       <Footer />
