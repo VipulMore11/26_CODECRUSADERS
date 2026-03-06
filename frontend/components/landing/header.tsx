@@ -4,7 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Dna, Shield } from "lucide-react"
+import { Menu, Shield } from "lucide-react"
+import { PulseIcon } from "@/components/ui/pulse-icon"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard" },
@@ -21,7 +22,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Dna className="h-5 w-5 text-primary-foreground" />
+            <PulseIcon className="h-5 w-5 text-primary-foreground" />
           </div>
           <span className="text-xl font-bold text-foreground">TrialMatch AI</span>
         </Link>

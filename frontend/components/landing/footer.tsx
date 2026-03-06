@@ -1,12 +1,12 @@
 import Link from "next/link"
-import { Dna } from "lucide-react"
+import { PulseIcon } from "@/components/ui/pulse-icon"
 
 const footerLinks = {
   Platform: [
     { name: "How It Works", href: "#how-it-works" },
     { name: "Features", href: "#features" },
     { name: "Clinical Trials", href: "/trials" },
-    { name: "Treatment Analysis", href: "/treatments" },
+    { name: "Treatment Analysis", href: "/analyze" },
   ],
   Resources: [
     { name: "Documentation", href: "#" },
@@ -37,7 +37,7 @@ export function Footer() {
           <div className="col-span-2">
             <Link href="/" className="mb-4 flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                <Dna className="h-5 w-5 text-primary-foreground" />
+                <PulseIcon className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold text-foreground">TrialMatch AI</span>
             </Link>

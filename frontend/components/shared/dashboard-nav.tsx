@@ -14,6 +14,8 @@ import {
   Shield,
 } from "lucide-react"
 
+import { PulseIcon } from "@/components/ui/pulse-icon"
+
 const navItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/upload", label: "Upload Records", icon: Upload },
@@ -59,7 +61,7 @@ export function DashboardHeader() {
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Shield className="h-4 w-4" />
+              <PulseIcon className="h-4 w-4" />
             </div>
             <span className="font-semibold">TrialMatch AI</span>
           </Link>
