@@ -65,7 +65,7 @@ export function TrialsFilter({ filters, onFilterChange, totalResults }: TrialsFi
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   const updateFilter = (key: keyof FilterState, value: string | string[]) => {
-    onFilterChange({ ...filters, [key]: value })
+    onFilterChange({ ...filters, [key]: value === "all" ? "" : value })
   }
 
   const toggleTag = (tag: string) => {
@@ -99,13 +99,13 @@ export function TrialsFilter({ filters, onFilterChange, totalResults }: TrialsFi
     <div className="space-y-6">
       <div className="space-y-2">
         <Label>Status</Label>
-        <Select value={filters.status} onValueChange={(v) => updateFilter("status", v)}>
+        <Select value={filters.status || "all"} onValueChange={(v) => updateFilter("status", v)}>
           <SelectTrigger>
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
             {statuses.map((status) => (
-              <SelectItem key={status} value={status === "All Statuses" ? "" : status}>
+              <SelectItem key={status} value={status === "All Statuses" ? "all" : status}>
                 {status}
               </SelectItem>
             ))}
@@ -115,13 +115,13 @@ export function TrialsFilter({ filters, onFilterChange, totalResults }: TrialsFi
 
       <div className="space-y-2">
         <Label>Phase</Label>
-        <Select value={filters.phase} onValueChange={(v) => updateFilter("phase", v)}>
+        <Select value={filters.phase || "all"} onValueChange={(v) => updateFilter("phase", v)}>
           <SelectTrigger>
             <SelectValue placeholder="All Phases" />
           </SelectTrigger>
           <SelectContent>
             {phases.map((phase) => (
-              <SelectItem key={phase} value={phase === "All Phases" ? "" : phase}>
+              <SelectItem key={phase} value={phase === "All Phases" ? "all" : phase}>
                 {phase}
               </SelectItem>
             ))}
@@ -131,13 +131,13 @@ export function TrialsFilter({ filters, onFilterChange, totalResults }: TrialsFi
 
       <div className="space-y-2">
         <Label>Condition</Label>
-        <Select value={filters.condition} onValueChange={(v) => updateFilter("condition", v)}>
+        <Select value={filters.condition || "all"} onValueChange={(v) => updateFilter("condition", v)}>
           <SelectTrigger>
             <SelectValue placeholder="All Conditions" />
           </SelectTrigger>
           <SelectContent>
             {conditions.map((condition) => (
-              <SelectItem key={condition} value={condition === "All Conditions" ? "" : condition}>
+              <SelectItem key={condition} value={condition === "All Conditions" ? "all" : condition}>
                 {condition}
               </SelectItem>
             ))}
@@ -160,13 +160,13 @@ export function TrialsFilter({ filters, onFilterChange, totalResults }: TrialsFi
 
       <div className="space-y-2">
         <Label>Distance</Label>
-        <Select value={filters.distance} onValueChange={(v) => updateFilter("distance", v)}>
+        <Select value={filters.distance || "all"} onValueChange={(v) => updateFilter("distance", v)}>
           <SelectTrigger>
             <SelectValue placeholder="Any Distance" />
           </SelectTrigger>
           <SelectContent>
             {distances.map((distance) => (
-              <SelectItem key={distance} value={distance === "Any Distance" ? "" : distance}>
+              <SelectItem key={distance} value={distance === "Any Distance" ? "all" : distance}>
                 {distance}
               </SelectItem>
             ))}
@@ -216,7 +216,7 @@ export function TrialsFilter({ filters, onFilterChange, totalResults }: TrialsFi
             className="pl-10"
           />
         </div>
-        
+
         {/* Mobile Filter Button */}
         <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
           <SheetTrigger asChild>
@@ -293,7 +293,7 @@ export function TrialsFilter({ filters, onFilterChange, totalResults }: TrialsFi
 
 export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: TrialsFilterProps) {
   const updateFilter = (key: keyof FilterState, value: string | string[]) => {
-    onFilterChange({ ...filters, [key]: value })
+    onFilterChange({ ...filters, [key]: value === "all" ? "" : value })
   }
 
   const toggleTag = (tag: string) => {
@@ -337,13 +337,13 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
 
         <div className="space-y-2">
           <Label>Status</Label>
-          <Select value={filters.status} onValueChange={(v) => updateFilter("status", v)}>
+          <Select value={filters.status || "all"} onValueChange={(v) => updateFilter("status", v)}>
             <SelectTrigger>
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
               {statuses.map((status) => (
-                <SelectItem key={status} value={status === "All Statuses" ? "" : status}>
+                <SelectItem key={status} value={status === "All Statuses" ? "all" : status}>
                   {status}
                 </SelectItem>
               ))}
@@ -353,13 +353,13 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
 
         <div className="space-y-2">
           <Label>Phase</Label>
-          <Select value={filters.phase} onValueChange={(v) => updateFilter("phase", v)}>
+          <Select value={filters.phase || "all"} onValueChange={(v) => updateFilter("phase", v)}>
             <SelectTrigger>
               <SelectValue placeholder="All Phases" />
             </SelectTrigger>
             <SelectContent>
               {phases.map((phase) => (
-                <SelectItem key={phase} value={phase === "All Phases" ? "" : phase}>
+                <SelectItem key={phase} value={phase === "All Phases" ? "all" : phase}>
                   {phase}
                 </SelectItem>
               ))}
@@ -369,13 +369,13 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
 
         <div className="space-y-2">
           <Label>Condition</Label>
-          <Select value={filters.condition} onValueChange={(v) => updateFilter("condition", v)}>
+          <Select value={filters.condition || "all"} onValueChange={(v) => updateFilter("condition", v)}>
             <SelectTrigger>
               <SelectValue placeholder="All Conditions" />
             </SelectTrigger>
             <SelectContent>
               {conditions.map((condition) => (
-                <SelectItem key={condition} value={condition === "All Conditions" ? "" : condition}>
+                <SelectItem key={condition} value={condition === "All Conditions" ? "all" : condition}>
                   {condition}
                 </SelectItem>
               ))}
@@ -398,13 +398,13 @@ export function TrialsFilterSidebar({ filters, onFilterChange, totalResults }: T
 
         <div className="space-y-2">
           <Label>Distance</Label>
-          <Select value={filters.distance} onValueChange={(v) => updateFilter("distance", v)}>
+          <Select value={filters.distance || "all"} onValueChange={(v) => updateFilter("distance", v)}>
             <SelectTrigger>
               <SelectValue placeholder="Any Distance" />
             </SelectTrigger>
             <SelectContent>
               {distances.map((distance) => (
-                <SelectItem key={distance} value={distance === "Any Distance" ? "" : distance}>
+                <SelectItem key={distance} value={distance === "Any Distance" ? "all" : distance}>
                   {distance}
                 </SelectItem>
               ))}
