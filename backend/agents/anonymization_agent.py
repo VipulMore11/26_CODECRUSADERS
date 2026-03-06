@@ -1,52 +1,52 @@
 from typing import Dict, Any
 from loguru import logger
-import asyncio
+import uuid
+import re
 from datetime import datetime
-from utils.anonymization_utils import AnonymizationAgent as AnonymizationUtilsAgent
 from models.schemas import AnonymizedPatientProfile
+
+
+# PII patterns to strip from free-text fields
+_PII_PATTERNS = [
+    re.compile(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b'),          # phone
+    re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.\w+\b'),  # email
+    re.compile(r'\b\d{3}-\d{2}-\d{4}\b'),                   # SSN
+]
+
 
 class AnonymizationAgent:
     """
     Agent responsible for detecting and removing PII from patient data.
-    
-    Implements:
-    - UUID-based patient IDs
-    - PII field removal (name, phone, address)
-    - Regex + NER anonymization
-    - Never stores raw identifiable patient data
     """
-    
+
     def __init__(self):
         self.logger = logger
         self.agent_id = "anonymization_agent"
         self.role = "Privacy Preservation Specialist"
-        self.utils_agent = AnonymizationUtilsAgent()
-    
+
+    @staticmethod
+    def _generate_patient_id() -> str:
+        return f"PT-{uuid.uuid4()}"
+
+    @staticmethod
+    def _strip_pii(text: str) -> str:
+        for pattern in _PII_PATTERNS:
+            text = pattern.sub("[REDACTED]", text)
+        return text
+
     async def anonymize_patient_data(self, extracted_data: Dict[str, Any], patient_id: str = None) -> Dict[str, Any]:
-        """
-        Anonymize extracted patient data.
-        
-        Args:
-            extracted_data: Output from extraction agent
-            patient_id: Optional existing patient ID
-        
-        Returns:
-            Anonymized patient data with UUID
-        """
         self.logger.info("Starting patient data anonymization")
-        
+
         try:
-            # Generate patient ID if not provided
             if not patient_id:
-                patient_id = self.utils_agent.utils.generate_patient_id()
-            
-            self.logger.info(f"Assigned patient ID: {patient_id}")
-            
-            # Extract profile from extraction agent output
+                patient_id = self._generate_patient_id()
+
             profile = extracted_data.get("extracted_profile", extracted_data)
-            
-            # Anonymize the profile
-            anonymized_profile = self.utils_agent.anonymize_patient_data(profile, patient_id)
+
+            # Strip PII from string fields
+            for key, val in profile.items():
+                if isinstance(val, str):
+                    profile[key] = self._strip_pii(val)
             
             # Create AnonymizedPatientProfile model
             anonymized = AnonymizedPatientProfile(
