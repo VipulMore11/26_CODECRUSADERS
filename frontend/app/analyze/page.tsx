@@ -1,399 +1,539 @@
 "use client"
 
 import { useState } from "react"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/footer"
-import { FileUpload } from "@/components/file-upload"
-import { ProcedureCard, type Procedure } from "@/components/procedure-card"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { Header } from "@/components/landing/header"
+import { Footer } from "@/components/landing/footer"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import {
+  Search,
+  Pill,
   Stethoscope,
+  Activity,
   Brain,
-  FileText,
-  ArrowRight,
-  Shield,
-  AlertTriangle,
+  Heart,
+  Dna,
+  Sparkles,
   CheckCircle2,
-  Clock
+  AlertTriangle,
+  ArrowRight,
+  TrendingUp,
+  Clock,
+  DollarSign,
+  Shield,
+  FileText,
 } from "lucide-react"
 
-// Mock procedure data
-const mockProcedures: Procedure[] = [
+interface Treatment {
+  id: string
+  name: string
+  category: string
+  type: "Medication" | "Procedure" | "Therapy" | "Lifestyle" | "Device"
+  description: string
+  successRate: number
+  duration: string
+  costEstimate: string
+  benefits: string[]
+  risks: string[]
+  sideEffects: string[]
+  alternatives: string[]
+  conditions: string[]
+  aiInsight: string
+}
+
+const treatments: Treatment[] = [
   {
-    id: "proc1",
-    name: "Minimally Invasive Robotic Surgery",
-    type: "Surgical",
-    description: "Robot-assisted surgery using small incisions with enhanced precision and visualization for tumor removal.",
-    successRate: 92,
-    feasibilityScore: 88,
-    estimatedCost: "$45,000 - $65,000",
-    recoveryTime: "2-4 weeks",
-    hospitalStay: "1-2 days",
-    recommended: true,
-    pros: [
-      "Smaller incisions leading to less scarring",
-      "Reduced blood loss during procedure",
-      "Shorter hospital stay compared to open surgery",
-      "Faster return to normal activities",
-      "Lower risk of infection",
-    ],
-    cons: [
-      "Requires specialized surgical team",
-      "Not available at all medical centers",
-      "Higher upfront cost than traditional surgery",
-      "Longer operative time in some cases",
-    ],
-    risks: [
-      "Bleeding or hematoma (2-5% risk)",
-      "Nerve damage (1-3% risk)",
-      "Conversion to open surgery if complications arise",
-      "Anesthesia-related complications",
-    ],
-    longTermOutcomes: [
-      "5-year survival rate: 85-90% for early-stage cases",
-      "Recurrence rate: 10-15% within first 5 years",
-      "Quality of life generally maintained post-recovery",
-      "Regular follow-up imaging recommended every 6 months",
-    ],
-    alternatives: ["Open Surgery", "Radiation Therapy", "Chemotherapy", "Watchful Waiting"],
-  },
-  {
-    id: "proc2",
-    name: "Immunotherapy Treatment Protocol",
-    type: "Medical",
-    description: "Checkpoint inhibitor therapy that helps the immune system recognize and attack cancer cells more effectively.",
-    successRate: 75,
-    feasibilityScore: 82,
-    estimatedCost: "$100,000 - $150,000/year",
-    recoveryTime: "Ongoing treatment",
-    hospitalStay: "Outpatient",
-    recommended: false,
-    pros: [
-      "Non-invasive treatment option",
-      "Can be combined with other therapies",
-      "Potential for durable long-term responses",
-      "Outpatient administration",
-      "May shrink tumors significantly",
-    ],
-    cons: [
-      "High cost of treatment",
-      "Not all patients respond to therapy",
-      "Can take weeks to months to see response",
-      "Requires regular infusions over extended period",
-    ],
-    risks: [
-      "Immune-related adverse events (20-30% risk)",
-      "Fatigue and weakness (50% of patients)",
-      "Skin reactions and rashes",
-      "Potential thyroid dysfunction",
-      "Rare but serious: pneumonitis, colitis, hepatitis",
-    ],
-    longTermOutcomes: [
-      "Complete response rate: 15-25% depending on cancer type",
-      "Responses can be durable for years in responders",
-      "Some patients achieve long-term disease control",
-      "Quality of life generally preserved during treatment",
-    ],
-    alternatives: ["Targeted Therapy", "Chemotherapy", "Radiation", "Clinical Trials"],
-  },
-  {
-    id: "proc3",
-    name: "Stereotactic Body Radiation Therapy (SBRT)",
-    type: "Radiation",
-    description: "Highly focused radiation beams delivered with extreme precision to target tumors while minimizing damage to surrounding tissue.",
+    id: "tx-001",
+    name: "GLP-1 Receptor Agonists",
+    category: "Diabetes",
+    type: "Medication",
+    description: "Injectable medications that help regulate blood sugar by mimicking the GLP-1 hormone. Includes options like semaglutide and tirzepatide.",
     successRate: 85,
-    feasibilityScore: 78,
-    estimatedCost: "$20,000 - $40,000",
-    recoveryTime: "1-2 weeks",
-    hospitalStay: "Outpatient",
-    recommended: false,
-    pros: [
-      "Non-invasive treatment",
-      "Completed in 3-5 sessions",
-      "Minimal recovery time needed",
-      "Precise targeting reduces side effects",
-      "Good option for patients not fit for surgery",
-    ],
-    cons: [
-      "Limited by tumor size and location",
-      "Radiation exposure concerns",
-      "May not be suitable for all cancer types",
-      "Single-use in same area typically",
-    ],
-    risks: [
-      "Fatigue during and after treatment",
-      "Skin irritation in treatment area",
-      "Damage to nearby organs (location dependent)",
-      "Rare: radiation pneumonitis for lung tumors",
-    ],
-    longTermOutcomes: [
-      "Local control rate: 80-95% for small tumors",
-      "3-year survival comparable to surgery for eligible patients",
-      "Low rate of serious late complications",
-      "Can be combined with systemic therapy",
-    ],
-    alternatives: ["Surgery", "Conventional Radiation", "Proton Therapy", "Cryotherapy"],
+    duration: "Ongoing treatment",
+    costEstimate: "$800-1500/month",
+    benefits: ["Significant weight loss", "Improved blood sugar control", "Cardiovascular protection", "Once-weekly dosing available"],
+    risks: ["Gastrointestinal side effects", "Rare thyroid concerns", "Pancreatitis risk"],
+    sideEffects: ["Nausea", "Vomiting", "Diarrhea", "Constipation"],
+    alternatives: ["SGLT2 inhibitors", "DPP-4 inhibitors", "Insulin therapy"],
+    conditions: ["Type 2 Diabetes", "Obesity", "Pre-diabetes"],
+    aiInsight: "Based on recent clinical data, GLP-1 agonists show 20-30% better outcomes for patients with concurrent cardiovascular disease compared to traditional therapies.",
+  },
+  {
+    id: "tx-002",
+    name: "Immunotherapy (PD-1/PD-L1 Inhibitors)",
+    category: "Oncology",
+    type: "Medication",
+    description: "Checkpoint inhibitors that help the immune system recognize and attack cancer cells. Includes pembrolizumab, nivolumab, and others.",
+    successRate: 45,
+    duration: "6-24 months typically",
+    costEstimate: "$12,000-20,000/month",
+    benefits: ["Durable responses", "Works across multiple cancer types", "May lead to long-term remission", "Better quality of life than chemo"],
+    risks: ["Immune-related adverse events", "Pneumonitis", "Colitis", "Hepatitis"],
+    sideEffects: ["Fatigue", "Skin rash", "Diarrhea", "Thyroid dysfunction"],
+    alternatives: ["Chemotherapy", "Targeted therapy", "CAR-T cell therapy", "Radiation"],
+    conditions: ["Non-Small Cell Lung Cancer", "Melanoma", "Renal Cell Carcinoma", "Bladder Cancer"],
+    aiInsight: "Patients with high PD-L1 expression (>50%) show response rates up to 60%. Biomarker testing is recommended before treatment initiation.",
+  },
+  {
+    id: "tx-003",
+    name: "Cognitive Behavioral Therapy (CBT)",
+    category: "Mental Health",
+    type: "Therapy",
+    description: "Structured psychotherapy that helps identify and change negative thought patterns and behaviors. Effective for anxiety, depression, and other conditions.",
+    successRate: 75,
+    duration: "12-20 weeks typically",
+    costEstimate: "$100-250/session",
+    benefits: ["No medication side effects", "Long-lasting results", "Teaches coping skills", "Can be combined with medication"],
+    risks: ["Requires commitment", "May initially increase distress", "Results vary"],
+    sideEffects: ["Temporary emotional discomfort", "Time commitment required"],
+    alternatives: ["Medication (SSRIs)", "Dialectical Behavior Therapy", "Mindfulness-based therapy", "EMDR"],
+    conditions: ["Depression", "Anxiety Disorders", "PTSD", "OCD", "Insomnia"],
+    aiInsight: "CBT combined with medication shows 30% better outcomes for moderate-to-severe depression compared to either treatment alone.",
+  },
+  {
+    id: "tx-004",
+    name: "Transcatheter Aortic Valve Replacement (TAVR)",
+    category: "Cardiovascular",
+    type: "Procedure",
+    description: "Minimally invasive procedure to replace a narrowed aortic valve without open-heart surgery.",
+    successRate: 95,
+    duration: "1-2 hour procedure, 3-5 day recovery",
+    costEstimate: "$50,000-80,000",
+    benefits: ["Minimally invasive", "Faster recovery", "Lower surgical risk", "Suitable for high-risk patients"],
+    risks: ["Stroke", "Vascular complications", "Pacemaker requirement", "Valve leak"],
+    sideEffects: ["Temporary fatigue", "Soreness at access site", "Irregular heartbeat"],
+    alternatives: ["Open heart surgery (SAVR)", "Balloon valvuloplasty", "Medical management"],
+    conditions: ["Aortic Stenosis", "Aortic Valve Disease"],
+    aiInsight: "For patients over 70, TAVR shows similar long-term outcomes to surgical replacement with significantly shorter hospital stays.",
+  },
+  {
+    id: "tx-005",
+    name: "Deep Brain Stimulation (DBS)",
+    category: "Neurology",
+    type: "Device",
+    description: "Surgical implant of electrodes in specific brain areas to deliver electrical stimulation for movement disorders.",
+    successRate: 70,
+    duration: "Permanent implant, battery replacement every 3-5 years",
+    costEstimate: "$35,000-100,000",
+    benefits: ["Significant symptom reduction", "Adjustable settings", "Reduces medication needs", "Reversible"],
+    risks: ["Surgical complications", "Infection", "Hardware issues", "Speech problems"],
+    sideEffects: ["Tingling sensations", "Mood changes", "Balance issues during adjustment"],
+    alternatives: ["Medication optimization", "Physical therapy", "Focused ultrasound", "Lesioning surgery"],
+    conditions: ["Parkinson's Disease", "Essential Tremor", "Dystonia", "OCD"],
+    aiInsight: "Patients who receive DBS within 7 years of Parkinson's diagnosis show better motor outcomes than those treated later in disease progression.",
+  },
+  {
+    id: "tx-006",
+    name: "Mediterranean Diet Protocol",
+    category: "Cardiovascular",
+    type: "Lifestyle",
+    description: "Evidence-based dietary pattern emphasizing olive oil, fish, nuts, fruits, vegetables, and whole grains.",
+    successRate: 65,
+    duration: "Lifelong lifestyle change",
+    costEstimate: "$50-100/week additional",
+    benefits: ["Heart disease risk reduction", "Weight management", "Anti-inflammatory effects", "Cognitive benefits"],
+    risks: ["Requires dietary changes", "May not suit all preferences"],
+    sideEffects: ["Initial adjustment period", "Increased cooking time"],
+    alternatives: ["DASH diet", "Plant-based diet", "Low-carb diet", "Intermittent fasting"],
+    conditions: ["Heart Disease", "Hypertension", "Type 2 Diabetes", "Cognitive Decline Prevention"],
+    aiInsight: "Studies show 30% reduction in cardiovascular events for high-risk patients following Mediterranean diet with extra virgin olive oil supplementation.",
   },
 ]
 
-export default function AnalyzePage() {
-  const [step, setStep] = useState<"upload" | "details" | "analyzing" | "results">("upload")
-  const [progress, setProgress] = useState(0)
-  const [condition, setCondition] = useState("")
-  const [stage, setStage] = useState("")
-  const [notes, setNotes] = useState("")
+const categories = [...new Set(treatments.map(t => t.category))]
+const types = [...new Set(treatments.map(t => t.type))]
 
-  const handleStartAnalysis = () => {
-    setStep("analyzing")
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setTimeout(() => setStep("results"), 500)
-          return 100
-        }
-        return prev + 4
-      })
-    }, 120)
+const categoryIcons: Record<string, React.ReactNode> = {
+  Diabetes: <Activity className="h-5 w-5" />,
+  Oncology: <Dna className="h-5 w-5" />,
+  "Mental Health": <Brain className="h-5 w-5" />,
+  Cardiovascular: <Heart className="h-5 w-5" />,
+  Neurology: <Brain className="h-5 w-5" />,
+}
+
+export default function AnalyzePage() {
+  const [search, setSearch] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null)
+
+  const filteredTreatments = treatments.filter(treatment => {
+    if (search) {
+      const searchLower = search.toLowerCase()
+      if (!treatment.name.toLowerCase().includes(searchLower) &&
+          !treatment.description.toLowerCase().includes(searchLower) &&
+          !treatment.conditions.some(c => c.toLowerCase().includes(searchLower))) {
+        return false
+      }
+    }
+    if (selectedCategory !== "all" && treatment.category !== selectedCategory) {
+      return false
+    }
+    return true
+  })
+
+  if (selectedTreatment) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-8">
+          <TreatmentDetail treatment={selectedTreatment} onBack={() => setSelectedTreatment(null)} />
+        </main>
+        <Footer />
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="pt-20">
-        <div className="mx-auto max-w-[1440px] px-8 py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Medical Procedure Analysis</h1>
-            <p className="mt-4 text-base text-muted-foreground">
-              Upload your medical records to get AI-powered recommendations for treatment procedures
-            </p>
+      <Header />
+
+      <main className="container mx-auto px-4 py-12">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <Badge variant="secondary" className="mb-4 gap-2">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            AI-Powered Analysis
+          </Badge>
+          <h1 className="mb-4 text-3xl font-bold text-foreground md:text-4xl">
+            Procedure Analysis Tool
+          </h1>
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+            Evaluate medical procedures with AI-powered insights. Analyze success rates, 
+            recovery times, costs, and make informed decisions about your treatment options.
+          </p>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="mx-auto mb-8 max-w-2xl">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search treatments, conditions..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
+        </div>
 
-          {/* Privacy Notice */}
-          <Card className="mb-8 border-primary/30 bg-primary/5">
-            <CardContent className="flex items-start gap-4 p-6">
-              <Shield className="h-6 w-6 shrink-0 text-primary" />
+        {/* Category Tabs */}
+        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="mb-8">
+          <TabsList className="flex h-auto flex-wrap justify-center gap-2 bg-transparent">
+            <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              All Categories
+            </TabsTrigger>
+            {categories.map(category => (
+              <TabsTrigger 
+                key={category} 
+                value={category}
+                className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                {categoryIcons[category]}
+                {category}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
+        {/* CTA Banner */}
+        <Card className="mb-8 border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5">
+          <CardContent className="flex flex-col items-center justify-between gap-4 py-6 sm:flex-row">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
               <div>
-                <h3 className="text-lg font-bold">Your Data is Protected</h3>
-                <p className="mt-2 text-base text-muted-foreground">
-                  All medical records are processed with complete anonymization. No personal information
-                  is stored or associated with your analysis. Results are generated locally and securely.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {step === "upload" && (
-            <div className="space-y-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-xl font-bold">
-                    <FileText className="h-6 w-6" />
-                    Upload Medical Records
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    Upload your diagnosis reports, imaging results, and lab work for comprehensive analysis
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FileUpload onFilesUploaded={() => { }} />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-xl font-bold">
-                    <Stethoscope className="h-6 w-6" />
-                    Condition Details
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    Provide information about your diagnosis to improve recommendation accuracy
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-3">
-                      <Label htmlFor="condition" className="text-base font-semibold">Primary Condition</Label>
-                      <Select value={condition} onValueChange={setCondition}>
-                        <SelectTrigger id="condition" className="h-12 text-base rounded-xl border-2">
-                          <SelectValue placeholder="Select condition" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="lung-cancer">Lung Cancer</SelectItem>
-                          <SelectItem value="breast-cancer">Breast Cancer</SelectItem>
-                          <SelectItem value="prostate-cancer">Prostate Cancer</SelectItem>
-                          <SelectItem value="colorectal-cancer">Colorectal Cancer</SelectItem>
-                          <SelectItem value="pancreatic-cancer">Pancreatic Cancer</SelectItem>
-                          <SelectItem value="liver-cancer">Liver Cancer</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-3">
-                      <Label htmlFor="stage" className="text-base font-semibold">Stage (if applicable)</Label>
-                      <Select value={stage} onValueChange={setStage}>
-                        <SelectTrigger id="stage" className="h-12 text-base rounded-xl border-2">
-                          <SelectValue placeholder="Select stage" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="stage-1">Stage I</SelectItem>
-                          <SelectItem value="stage-2">Stage II</SelectItem>
-                          <SelectItem value="stage-3">Stage III</SelectItem>
-                          <SelectItem value="stage-4">Stage IV</SelectItem>
-                          <SelectItem value="unknown">Unknown</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label htmlFor="notes" className="text-base font-semibold">Additional Information</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="Enter any relevant medical history, previous treatments, current symptoms, or specific concerns..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={6}
-                      className="text-base rounded-xl border-2 p-4"
-                    />
-                  </div>
-
-                  <Button onClick={handleStartAnalysis} className="w-full gap-3 py-8 text-lg font-bold rounded-2xl" size="lg">
-                    <Brain className="h-6 w-6" />
-                    Analyze Treatment Options
-                    <ArrowRight className="h-5 w-5" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {step === "analyzing" && (
-            <Card className="max-w-lg mx-auto">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                  <Brain className="h-8 w-8 text-primary animate-pulse" />
-                </div>
-                <CardTitle className="text-2xl">Analyzing Your Records</CardTitle>
-                <CardDescription>
-                  Our AI is reviewing your medical data and comparing treatment options
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <Progress value={progress} className="h-3" />
-
-                <div className="space-y-3">
-                  {[
-                    { label: "Processing medical records", done: progress > 15 },
-                    { label: "Extracting diagnosis information", done: progress > 35 },
-                    { label: "Analyzing treatment options", done: progress > 55 },
-                    { label: "Calculating success rates", done: progress > 75 },
-                    { label: "Generating recommendations", done: progress >= 100 },
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      {item.done ? (
-                        <CheckCircle2 className="h-5 w-5 text-success" />
-                      ) : (
-                        <Clock className="h-5 w-5 text-muted-foreground animate-spin" />
-                      )}
-                      <span className={item.done ? "text-foreground" : "text-muted-foreground"}>
-                        {item.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {step === "results" && (
-            <div className="space-y-8">
-              {/* Summary */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Stethoscope className="h-5 w-5" />
-                    Analysis Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-lg bg-secondary/50 p-4">
-                      <p className="text-sm text-muted-foreground">Condition Analyzed</p>
-                      <p className="mt-1 font-semibold">Stage II Lung Cancer (NSCLC)</p>
-                    </div>
-                    <div className="rounded-lg bg-secondary/50 p-4">
-                      <p className="text-sm text-muted-foreground">Procedures Evaluated</p>
-                      <p className="mt-1 font-semibold">{mockProcedures.length} Treatment Options</p>
-                    </div>
-                    <div className="rounded-lg bg-secondary/50 p-4">
-                      <p className="text-sm text-muted-foreground">Best Match Success Rate</p>
-                      <p className="mt-1 font-semibold text-success">92%</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Warning */}
-              <Card className="border-warning/30 bg-warning/5">
-                <CardContent className="flex items-start gap-4 p-6">
-                  <AlertTriangle className="h-6 w-6 shrink-0 text-warning" />
-                  <div>
-                    <h3 className="font-semibold">Medical Disclaimer</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      This analysis is for informational purposes only and should not replace professional medical advice.
-                      Always consult with qualified healthcare providers before making treatment decisions.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Procedure Results */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold">Recommended Procedures</h2>
-                {mockProcedures.map((procedure, index) => (
-                  <ProcedureCard key={procedure.id} procedure={procedure} rank={index + 1} />
-                ))}
-              </div>
-
-              {/* Action Buttons */}
-              <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-                  <h3 className="text-xl font-semibold">Download Complete Analysis</h3>
-                  <p className="text-muted-foreground">
-                    Get a comprehensive PDF report with all procedure details, comparisons, and recommendations
-                  </p>
-                  <div className="flex gap-2">
-                    <Button size="lg">Download PDF Report</Button>
-                    <Button size="lg" variant="outline">Export as CSV</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="text-center">
-                <Button variant="outline" onClick={() => setStep("upload")}>
-                  Start New Analysis
-                </Button>
+                <h3 className="font-semibold text-foreground">Get Personalized Treatment Recommendations</h3>
+                <p className="text-sm text-muted-foreground">Upload your medical records for AI-powered analysis</p>
               </div>
             </div>
+            <Button asChild className="gap-2">
+              <Link href="/dashboard">
+                Start Matching
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Treatment Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredTreatments.map(treatment => (
+            <TreatmentCard 
+              key={treatment.id} 
+              treatment={treatment}
+              onClick={() => setSelectedTreatment(treatment)}
+            />
+          ))}
+        </div>
+
+        {filteredTreatments.length === 0 && (
+          <div className="py-16 text-center">
+            <p className="text-lg font-medium text-foreground">No treatments found</p>
+            <p className="text-muted-foreground">Try adjusting your search or filters</p>
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
+
+function TreatmentCard({ treatment, onClick }: { treatment: Treatment; onClick: () => void }) {
+  const typeColors: Record<string, string> = {
+    Medication: "bg-blue-500",
+    Procedure: "bg-green-500",
+    Therapy: "bg-purple-500",
+    Lifestyle: "bg-orange-500",
+    Device: "bg-cyan-500",
+  }
+
+  return (
+    <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg" onClick={onClick}>
+      <CardContent className="p-6">
+        <div className="mb-4 flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{treatment.category}</Badge>
+            <Badge className={`${typeColors[treatment.type]} text-white`}>{treatment.type}</Badge>
+          </div>
+        </div>
+
+        <h3 className="mb-2 text-lg font-semibold text-foreground">{treatment.name}</h3>
+        <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{treatment.description}</p>
+
+        <div className="mb-4">
+          <div className="mb-1 flex justify-between text-sm">
+            <span className="text-muted-foreground">Success Rate</span>
+            <span className="font-medium text-foreground">{treatment.successRate}%</span>
+          </div>
+          <Progress value={treatment.successRate} className="h-2" />
+        </div>
+
+        <div className="flex flex-wrap gap-1">
+          {treatment.conditions.slice(0, 2).map(condition => (
+            <Badge key={condition} variant="outline" className="text-xs">
+              {condition}
+            </Badge>
+          ))}
+          {treatment.conditions.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{treatment.conditions.length - 2} more
+            </Badge>
           )}
         </div>
-      </main>
-      <Footer />
+      </CardContent>
+    </Card>
+  )
+}
+
+function TreatmentDetail({ treatment, onBack }: { treatment: Treatment; onBack: () => void }) {
+  return (
+    <div className="space-y-6">
+      <Button variant="ghost" onClick={onBack} className="gap-2">
+        <ArrowRight className="h-4 w-4 rotate-180" />
+        Back to treatments
+      </Button>
+
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{treatment.category}</Badge>
+                <Badge className="bg-primary text-primary-foreground">{treatment.type}</Badge>
+              </div>
+              <CardTitle className="text-2xl md:text-3xl">{treatment.name}</CardTitle>
+              <CardDescription className="mt-2 text-base">{treatment.description}</CardDescription>
+            </div>
+            <div className="shrink-0 text-right">
+              <div className="text-4xl font-bold text-primary">{treatment.successRate}%</div>
+              <div className="text-sm text-muted-foreground">Success Rate</div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Duration</p>
+                <p className="font-medium text-foreground">{treatment.duration}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <DollarSign className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Cost Estimate</p>
+                <p className="font-medium text-foreground">{treatment.costEstimate}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Evidence Level</p>
+                <p className="font-medium text-foreground">High Quality</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* AI Insight */}
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Sparkles className="h-5 w-5 text-primary" />
+            AI Insight
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">{treatment.aiInsight}</p>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Benefits */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg text-success">
+              <CheckCircle2 className="h-5 w-5" />
+              Benefits
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {treatment.benefits.map((benefit, index) => (
+                <li key={index} className="flex items-start gap-2 rounded-lg bg-success/5 p-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                  <span className="text-foreground">{benefit}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Risks */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Risks & Side Effects
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible defaultValue="risks">
+              <AccordionItem value="risks" className="border-none">
+                <AccordionTrigger className="py-2 text-sm font-medium">Potential Risks</AccordionTrigger>
+                <AccordionContent>
+                  <ul className="space-y-2">
+                    {treatment.risks.map((risk, index) => (
+                      <li key={index} className="flex items-start gap-2 rounded-lg bg-destructive/5 p-3">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                        <span className="text-foreground">{risk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="side-effects" className="border-none">
+                <AccordionTrigger className="py-2 text-sm font-medium">Common Side Effects</AccordionTrigger>
+                <AccordionContent>
+                  <div className="flex flex-wrap gap-2">
+                    {treatment.sideEffects.map((effect, index) => (
+                      <Badge key={index} variant="secondary">{effect}</Badge>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Applicable Conditions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Applicable Conditions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {treatment.conditions.map((condition, index) => (
+              <Badge key={index} variant="outline" className="px-3 py-1">
+                {condition}
+              </Badge>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Alternatives */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Alternative Treatments</CardTitle>
+          <CardDescription>Other options you may want to discuss with your healthcare provider</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {treatment.alternatives.map((alt, index) => (
+              <div key={index} className="flex items-center gap-3 rounded-lg border border-border p-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+                  {index + 1}
+                </div>
+                <span className="font-medium text-foreground">{alt}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Disclaimer */}
+      <Card className="border-warning/30 bg-warning/5">
+        <CardContent className="flex items-start gap-4 py-4">
+          <Shield className="h-6 w-6 shrink-0 text-warning" />
+          <div>
+            <p className="font-medium text-foreground">Medical Disclaimer</p>
+            <p className="text-sm text-muted-foreground">
+              This information is for educational purposes only and should not replace professional medical advice. 
+              Always consult with a qualified healthcare provider before starting any treatment.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* CTA */}
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <Button asChild className="flex-1 gap-2">
+          <Link href="/upload">
+            <FileText className="h-4 w-4" />
+            Check Compatibility with My Records
+          </Link>
+        </Button>
+        <Button variant="outline" asChild className="flex-1 gap-2">
+          <Link href="/trials">
+            <Search className="h-4 w-4" />
+            Find Related Clinical Trials
+          </Link>
+        </Button>
+      </div>
     </div>
   )
 }

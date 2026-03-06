@@ -1,222 +1,577 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { FileUpload } from "@/components/file-upload"
-import { PatientInfoForm, type PatientData } from "@/components/patient-info-form"
-import { PrivacyWarningModal } from "@/components/privacy-warning-modal"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useDropzone } from "react-dropzone"
+import { Header } from "@/components/landing/header"
+import { Footer } from "@/components/landing/footer"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
-  Shield,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Upload,
   FileText,
-  ClipboardList,
+  Image,
+  X,
+  ArrowRight,
+  Shield,
+  AlertTriangle,
   Activity,
-  TrendingUp,
   Users,
-  Clock
+  Clock,
+  Target,
+  Plus,
+  Trash2,
+  User,
+  RefreshCw,
+  MapPin,
+  File,
 } from "lucide-react"
+
+const CONDITIONS = [
+  "Type 2 Diabetes",
+  "Hypertension",
+  "Asthma",
+  "COPD",
+  "Cancer (specify type)",
+  "Heart Disease",
+  "Chronic Kidney Disease",
+  "Depression",
+  "Anxiety",
+  "Arthritis",
+  "Obesity",
+  "High Cholesterol",
+  "Thyroid Disorder",
+  "Autoimmune Disease",
+  "Other",
+]
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [uploadedFiles, setUploadedFiles] = useState<{ id: string; name: string }[]>([])
+  const [showPrivacyModal, setShowPrivacyModal] = useState(true)
+  const [activeTab, setActiveTab] = useState("upload")
+  
+  // File upload state
+  const [files, setFiles] = useState<File[]>([])
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  
+  // Manual form state
+  const [patientId, setPatientId] = useState("")
+  const [age, setAge] = useState("")
+  const [gender, setGender] = useState("")
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([])
+  const [medications, setMedications] = useState<string[]>([])
+  const [newMedication, setNewMedication] = useState("")
+  const [allergies, setAllergies] = useState<string[]>([])
+  const [newAllergy, setNewAllergy] = useState("")
+  const [location, setLocation] = useState("")
+  const [notes, setNotes] = useState("")
 
-  const handleFilesUploaded = (files: { id: string; name: string }[]) => {
-    setUploadedFiles(files)
+  // Generate UUID on mount
+  useEffect(() => {
+    generatePatientId()
+  }, [])
+
+  const generatePatientId = () => {
+    const uuid = crypto.randomUUID().slice(0, 8).toUpperCase()
+    setPatientId(`PT-${uuid}`)
   }
 
-  const handleFormSubmit = (data: PatientData) => {
-    // Store data in sessionStorage for the results page
-    sessionStorage.setItem("patientData", JSON.stringify(data))
-    sessionStorage.setItem("uploadedFiles", JSON.stringify(uploadedFiles))
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    setFiles((prev) => [...prev, ...acceptedFiles])
+  }, [])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "application/pdf": [".pdf"],
+      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+    },
+  })
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B"
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+  }
+
+  const handleFileAnalysis = () => {
+    if (files.length > 0) {
+      setIsAnalyzing(true)
+      // Store info and redirect to results
+      sessionStorage.setItem("analysisType", "file")
+      sessionStorage.setItem("patientId", patientId)
+      setTimeout(() => {
+        router.push("/results")
+      }, 2000)
+    }
+  }
+
+  const handleManualSubmit = () => {
+    const patientData = {
+      patientId,
+      age: parseInt(age),
+      gender,
+      conditions: selectedConditions,
+      medications,
+      allergies,
+      location,
+      notes,
+    }
+    sessionStorage.setItem("analysisType", "manual")
+    sessionStorage.setItem("patientData", JSON.stringify(patientData))
     router.push("/results")
   }
 
+  const toggleCondition = (condition: string) => {
+    setSelectedConditions(prev =>
+      prev.includes(condition)
+        ? prev.filter(c => c !== condition)
+        : [...prev, condition]
+    )
+  }
+
+  const addMedication = () => {
+    if (newMedication.trim()) {
+      setMedications(prev => [...prev, newMedication.trim()])
+      setNewMedication("")
+    }
+  }
+
+  const removeMedication = (index: number) => {
+    setMedications(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const addAllergy = () => {
+    if (newAllergy.trim()) {
+      setAllergies(prev => [...prev, newAllergy.trim()])
+      setNewAllergy("")
+    }
+  }
+
+  const removeAllergy = (index: number) => {
+    setAllergies(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const isManualFormValid = age && gender && selectedConditions.length > 0
+
   return (
-    <div className="mx-auto max-w-[1600px] px-8 py-8">
-      <PrivacyWarningModal />
+    <div className="min-h-screen bg-background">
+      <Header />
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Patient Analysis Dashboard</h1>
-        <p className="mt-4 text-base text-muted-foreground">
-          Upload medical records and enter patient information for clinical trial matching
-        </p>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-2">
-          <CardContent className="flex items-center gap-6 p-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
-              <Activity className="h-7 w-7 text-primary" />
+      {/* Privacy Modal */}
+      <Dialog open={showPrivacyModal} onOpenChange={setShowPrivacyModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <Shield className="h-7 w-7 text-primary" />
             </div>
-            <div>
-              <p className="text-3xl font-black">2,847</p>
-              <p className="text-base font-medium text-muted-foreground">Active Trials</p>
+            <DialogTitle className="text-xl">Your Privacy is Protected</DialogTitle>
+            <DialogDescription className="text-base">
+              Before you proceed, please review our data handling practices.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+                <Shield className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">HIPAA Compliant</p>
+                <p className="text-sm text-muted-foreground">
+                  All data handling follows strict HIPAA guidelines for medical information protection.
+                </p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-2">
-          <CardContent className="flex items-center gap-6 p-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-success/10">
-              <TrendingUp className="h-7 w-7 text-success" />
+            
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
+                <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">UUID-Based Anonymization</p>
+                <p className="text-sm text-muted-foreground">
+                  Your identity is replaced with a unique anonymous identifier (UUID).
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-3xl font-black">94.7%</p>
-              <p className="text-base font-medium text-muted-foreground">Match Accuracy</p>
+            
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900">
+                <AlertTriangle className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">No Permanent Storage</p>
+                <p className="text-sm text-muted-foreground">
+                  Your medical data is processed in real-time and not stored on our servers.
+                </p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-2">
-          <CardContent className="flex items-center gap-6 p-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent/10">
-              <Users className="h-7 w-7 text-accent" />
-            </div>
-            <div>
-              <p className="text-3xl font-black">15,420</p>
-              <p className="text-base font-medium text-muted-foreground">Patients Matched</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-2">
-          <CardContent className="flex items-center gap-6 p-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-warning/10">
-              <Clock className="h-7 w-7 text-warning" />
-            </div>
-            <div>
-              <p className="text-3xl font-black">{"<"}2s</p>
-              <p className="text-base font-medium text-muted-foreground">Avg. Analysis Time</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Security Notice */}
-      <Card className="mb-8 border-primary/30 bg-primary/5">
-        <CardContent className="flex items-start gap-4 p-6">
-          <Shield className="h-6 w-6 shrink-0 text-primary" />
-          <div>
-            <h3 className="text-lg font-bold">Data Security Guaranteed</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              All patient data is anonymized using UUID assignment. Personal identifiers are automatically
-              removed using regex pattern matching. Your data never leaves your browser during processing.
-            </p>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Main Content */}
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="upload" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 h-14 rounded-xl">
-              <TabsTrigger value="upload" className="gap-2 text-base font-semibold">
-                <FileText className="h-5 w-5" />
-                Upload Documents
-              </TabsTrigger>
-              <TabsTrigger value="manual" className="gap-2 text-base font-semibold">
-                <ClipboardList className="h-5 w-5" />
-                Manual Entry
-              </TabsTrigger>
-            </TabsList>
+          <DialogFooter>
+            <Button onClick={() => setShowPrivacyModal(false)} className="w-full gap-2">
+              I Understand, Continue
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            <TabsContent value="upload" className="space-y-6">
-              <FileUpload onFilesUploaded={handleFilesUploaded} />
-
-              {uploadedFiles.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>AI Data Extraction</CardTitle>
-                    <CardDescription>
-                      Our OCR + LLM pipeline will extract structured data from your documents
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                        <span className="text-sm">Document Analysis</span>
-                        <Badge variant="secondary">Ready</Badge>
-                      </div>
-                      <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                        <span className="text-sm">PII Detection & Removal</span>
-                        <Badge variant="secondary">Ready</Badge>
-                      </div>
-                      <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                        <span className="text-sm">Data Structuring</span>
-                        <Badge variant="secondary">Ready</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <PatientInfoForm onSubmit={handleFormSubmit} />
-            </TabsContent>
-
-            <TabsContent value="manual">
-              <PatientInfoForm onSubmit={handleFormSubmit} />
-            </TabsContent>
-          </Tabs>
+      <main className="container mx-auto px-4 py-8">
+        {/* Quick Stats */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <Activity className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">2,847</p>
+                <p className="text-sm text-muted-foreground">Active Trials</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10">
+                <Target className="h-6 w-6 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">94.7%</p>
+                <p className="text-sm text-muted-foreground">Match Accuracy</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10">
+                <Users className="h-6 w-6 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">15,420</p>
+                <p className="text-sm text-muted-foreground">Patients Matched</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10">
+                <Clock className="h-6 w-6 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">500ms</p>
+                <p className="text-sm text-muted-foreground">Avg. Analysis Time</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Supported Formats</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[
-                  { format: "PDF Documents", desc: "Lab reports, prescriptions" },
-                  { format: "Images (JPG, PNG)", desc: "Scanned records, X-rays" },
-                  { format: "Word Documents", desc: "Medical summaries" },
-                  { format: "Text Files", desc: "Clinical notes" },
-                ].map((item) => (
-                  <div key={item.format} className="flex items-start gap-3">
-                    <div className="h-2 w-2 mt-2 rounded-full bg-primary" />
+        {/* Main Dashboard Card */}
+        <Card className="mx-auto max-w-4xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Patient Analysis Dashboard</CardTitle>
+            <CardDescription className="text-base">
+              Upload medical records or enter patient information manually to find matching clinical trials
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload" className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  File Upload
+                </TabsTrigger>
+                <TabsTrigger value="manual" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Manual Entry
+                </TabsTrigger>
+              </TabsList>
+
+              {/* File Upload Tab */}
+              <TabsContent value="upload" className="mt-6 space-y-6">
+                {/* Drop Zone */}
+                <div
+                  {...getRootProps()}
+                  className={`cursor-pointer rounded-xl border-2 border-dashed p-12 text-center transition-all ${
+                    isDragActive
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                    <Upload className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-lg font-semibold text-foreground">
+                    {isDragActive ? "Drop files here" : "Drag & drop medical records"}
+                  </h3>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    Supports PDFs, images, and scanned documents
+                  </p>
+                  <Button variant="outline" type="button">
+                    Browse Files
+                  </Button>
+                </div>
+
+                {/* File List */}
+                {files.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-foreground">
+                      Uploaded Files ({files.length})
+                    </p>
+                    {files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between rounded-lg border bg-card p-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            {file.type.startsWith("image/") ? (
+                              <Image className="h-5 w-5" />
+                            ) : (
+                              <File className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">{file.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatFileSize(file.size)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeFile(index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleFileAnalysis}
+                  disabled={files.length === 0 || isAnalyzing}
+                  className="w-full gap-2"
+                  size="lg"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Start AI Analysis
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </TabsContent>
+
+              {/* Manual Entry Tab */}
+              <TabsContent value="manual" className="mt-6 space-y-6">
+                {/* Patient ID */}
+                <div className="rounded-lg border bg-muted/50 p-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{item.format}</p>
-                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                      <Label className="text-sm text-muted-foreground">
+                        Anonymous Patient ID
+                      </Label>
+                      <p className="font-mono text-lg font-bold text-primary">{patientId}</p>
                     </div>
+                    <Button variant="outline" size="sm" onClick={generatePatientId}>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Regenerate
+                    </Button>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Processing Pipeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { step: 1, name: "Document Ingestion", status: "Queued" },
-                  { step: 2, name: "OCR Processing", status: "Queued" },
-                  { step: 3, name: "LLM Extraction", status: "Queued" },
-                  { step: 4, name: "Anonymization", status: "Queued" },
-                  { step: 5, name: "Trial Matching", status: "Queued" },
-                ].map((item) => (
-                  <div key={item.step} className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-sm font-medium">
-                      {item.step}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{item.name}</p>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {item.status}
-                    </Badge>
+                {/* Demographics */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age *</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      placeholder="Enter age"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                    />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender *</Label>
+                    <Select value={gender} onValueChange={setGender}>
+                      <SelectTrigger id="gender">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-2">
+                  <Label htmlFor="location">Patient Location</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="location"
+                      placeholder="City, State or ZIP code"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                {/* Medical Conditions */}
+                <div className="space-y-3">
+                  <Label>Medical Conditions *</Label>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {CONDITIONS.map((condition) => (
+                      <div
+                        key={condition}
+                        className="flex items-center space-x-2 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                      >
+                        <Checkbox
+                          id={condition}
+                          checked={selectedConditions.includes(condition)}
+                          onCheckedChange={() => toggleCondition(condition)}
+                        />
+                        <label
+                          htmlFor={condition}
+                          className="cursor-pointer text-sm font-medium leading-none"
+                        >
+                          {condition}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Medications */}
+                <div className="space-y-3">
+                  <Label>Current Medications</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add medication (e.g., Metformin 500mg)"
+                      value={newMedication}
+                      onChange={(e) => setNewMedication(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addMedication()}
+                    />
+                    <Button variant="outline" onClick={addMedication}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {medications.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {medications.map((med, index) => (
+                        <Badge key={index} variant="secondary" className="gap-1 py-1">
+                          {med}
+                          <button
+                            onClick={() => removeMedication(index)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Allergies */}
+                <div className="space-y-3">
+                  <Label>Known Allergies</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add allergy (e.g., Penicillin)"
+                      value={newAllergy}
+                      onChange={(e) => setNewAllergy(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addAllergy()}
+                    />
+                    <Button variant="outline" onClick={addAllergy}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {allergies.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {allergies.map((allergy, index) => (
+                        <Badge key={index} variant="destructive" className="gap-1 py-1">
+                          {allergy}
+                          <button
+                            onClick={() => removeAllergy(index)}
+                            className="ml-1 hover:text-white"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Additional Notes</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Any additional medical history or notes..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+
+                <Button
+                  onClick={handleManualSubmit}
+                  disabled={!isManualFormValid}
+                  className="w-full gap-2"
+                  size="lg"
+                >
+                  Find Matching Trials
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </main>
+
+      <Footer />
     </div>
   )
 }
