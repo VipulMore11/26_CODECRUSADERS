@@ -28,12 +28,21 @@ def create_app(config_name=None):
     @app.route('/')
     def home():
         return jsonify({
-            'message': 'Welcome to Flask Agentic AI API',
+            'message': 'Clinical Trial Matching Agentic AI API',
+            'version': '1.0.0',
+            'description': 'Agentic AI system that analyzes patient-trial matching using multiple specialized agents',
             'endpoints': {
-                'agent_health': '/api/agent/health',
-                'query': '/api/agent/query',
-                'chat': '/api/agent/chat'
-            }
+                'health': '/api/agent/health',
+                'analyze': '/api/agent/analyze (POST)',
+                'docs': '/api/docs (if available)'
+            },
+            'agents': [
+                'data_ingestion',
+                'medical_analysis', 
+                'trial_matching',
+                'risk_assessment',
+                'recommendation'
+            ]
         })
     
     # Error handlers
