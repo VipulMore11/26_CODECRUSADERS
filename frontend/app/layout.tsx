@@ -1,15 +1,23 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: '--font-inter'
+});
+
+const jetbrainsMono = JetBrains_Mono({ 
+  subsets: ["latin"],
+  variable: '--font-jetbrains'
+});
 
 export const metadata: Metadata = {
-  title: 'TrialMatch AI - Clinical Trial Eligibility Engine',
-  description: 'AI-powered clinical trial matching system that analyzes anonymized patient records and automatically matches them to suitable clinical trials with transparent explanations and confidence scores.',
+  title: 'TrialMatch AI | Clinical Trial & Treatment Matching Platform',
+  description: 'AI-powered platform that matches patients with relevant clinical trials and treatment procedures based on medical history. Secure, private, and transparent.',
   generator: 'v0.app',
+  keywords: ['clinical trials', 'medical AI', 'treatment matching', 'healthcare', 'patient matching'],
   icons: {
     icon: [
       {
@@ -29,13 +37,19 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  themeColor: '#6b5ce7',
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased">
         {children}
         <Analytics />

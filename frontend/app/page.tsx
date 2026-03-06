@@ -1,17 +1,25 @@
-import { Navigation } from "@/components/navigation"
-import { HeroSection } from "@/components/hero-section"
-import { FeaturesSection } from "@/components/features-section"
-import { HowItWorksSection } from "@/components/how-it-works-section"
-import { Footer } from "@/components/footer"
+"use client"
 
-export default function Home() {
+import { Header } from "@/components/landing/header"
+import { HeroSection } from "@/components/landing/hero-section"
+import { SecurityBanner } from "@/components/landing/security-banner"
+import { HowItWorks } from "@/components/landing/how-it-works"
+import { FeaturesSection } from "@/components/landing/features-section"
+import { PrivacySection } from "@/components/landing/privacy-section"
+import { CTASection } from "@/components/landing/cta-section"
+import { Footer } from "@/components/landing/footer"
+
+export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
+      <Header />
       <main>
         <HeroSection />
+        <SecurityBanner />
+        <HowItWorks />
         <FeaturesSection />
-        <HowItWorksSection />
+        <PrivacySection />
+        <CTASection />
       </main>
       <Footer />
     </div>
