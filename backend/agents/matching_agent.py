@@ -90,7 +90,8 @@ class MatchingAgent:
         scores.append(disease_match["confidence_score"])
         
         # Lab results matching
-        if criteria.required_lab_tests:
+        required_labs = getattr(criteria, "required_lab_tests", None)
+        if required_labs:
             lab_match = self._match_lab_results(patient.lab_results, criteria.required_lab_tests)
             if lab_match["matched"]:
                 matched_criteria.append("lab_results")
@@ -119,10 +120,10 @@ class MatchingAgent:
         scores.append(med_match["confidence_score"])
         
         # Check for risk factors
-        if patient.lab_results:
-            hba1c = patient.lab_results.get("HbA1c", 0)
-            if hba1c > 8.5:
-                risk_factors.append("High HbA1c level")
+        hba1c = patient.lab_results.get("HbA1c")
+
+        if hba1c and hba1c > 8.5:
+            risk_factors.append("High HbA1c level")
         
         # Calculate overall eligibility score
         overall_score = sum(scores) / len(scores) if scores else 0.0

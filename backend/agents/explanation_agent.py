@@ -64,10 +64,11 @@ class ExplanationAgent:
         risk_factors = match.get("risk_factors", [])
         
         # Create summary
+        trial_name = match.get("trial_name","Unknown Trial")
         if is_eligible:
-            summary = f"Patient is ELIGIBLE for {match['trial_name']} with {int(score*100)}% confidence."
+            summary = f"Patient is ELIGIBLE for {trial_name} with {int(score*100)}% confidence."
         else:
-            summary = f"Patient is NOT ELIGIBLE for {match['trial_name']}. Eligibility: {int(score*100)}%."
+            summary = f"Patient is NOT ELIGIBLE for {trial_name}. Eligibility: {int(score*100)}%."
         
         # Create detailed explanations
         detailed_explanations = []
@@ -89,15 +90,17 @@ class ExplanationAgent:
         # Create next steps
         next_steps = self._create_next_steps(is_eligible, score, risk_factors)
         
-        return PatientTrialExplanation(
+        result = PatientTrialExplanation(
             patient_id=patient_id,
             trial_id=match["trial_id"],
-            trial_name=match["trial_name"],
+            trial_name=trial_name,
             summary=summary,
             detailed_explanations=detailed_explanations,
             overall_assessment=assessment,
             next_steps=next_steps
-        ).model_dump()
+        )
+
+        return result.model_dump() if hasattr(result,"model_dump") else result.dict()
     
     @staticmethod
     def _create_positive_assessment(matched: List[str], unmatched: List[str], risk_factors: List[str]) -> str:

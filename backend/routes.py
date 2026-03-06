@@ -5,6 +5,8 @@ from datetime import datetime
 from agents import WebScrapingAgent
 import asyncio
 
+from orchestrator.orchestrator import get_orchestrator
+
 agent_bp = Blueprint('agent', __name__, url_prefix='/api/agent')
 
 class AgenticAI:
@@ -170,45 +172,60 @@ def health_check():
         ]
     })
 
+@agent_bp.route('/agents', methods=['GET'])
+def agents_info():
+
+    orchestrator = get_orchestrator()
+
+    return jsonify({
+        "agents": orchestrator.get_all_agents_info()
+    })
+
 @agent_bp.route('/analyze', methods=['POST'])
 def analyze_patient_trials():
-    """
-    Endpoint that triggers agentic AI analysis for patient-trial matching.
 
-    Takes only patient health records as input, automatically scrapes relevant clinical trials
-    from ClinicalTrials.gov, then analyzes matching using multiple specialized agents:
-
-    1. Web Scraping Agent - Searches ClinicalTrials.gov for relevant trials
-    2. Data Ingestion Agent - Validates and ingests input data
-    3. Medical Analysis Agent - Analyzes medical conditions and lab values
-    4. Trial Matching Agent - Matches patients to eligible trials
-    5. Risk Assessment Agent - Identifies potential risks and contraindications
-    6. Recommendation Agent - Generates clinical recommendations
-
-    Returns comprehensive analysis results from all agents.
-    """
     try:
+
         data = request.get_json()
 
         if not data:
-            return jsonify({'error': 'No data provided'}), 400
+            return jsonify({"error": "No input data"}), 400
 
-        # Extract patient data (only required input now)
-        patient_data = data.get('patient_data')
-        if not patient_data:
-            return jsonify({'error': 'patient_data is required'}), 400
 
-        # Run agentic AI analysis (scraping + analysis) asynchronously
+        patient_data = data.get("patient_data")
+        trials_data = data.get("trials")
+
+        if not patient_data or not trials_data:
+            return jsonify({"error": "patient_data and trials required"}), 400
+
+
+        # Convert input to schema objects
+        patient_obj = PatientDataInput(**patient_data)
+
+        trials_obj = [TrialDataInput(**trial) for trial in trials_data]
+
+
+        orchestrator = get_orchestrator()
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(agentic_ai.analyze(patient_data))
+
+        result = loop.run_until_complete(
+            orchestrator.execute_workflow(
+                patient_obj,
+                trials_obj,
+                include_explanation=True,
+                generate_pdf=False
+            )
+        )
+
         loop.close()
 
         return jsonify(result)
 
+
     except Exception as e:
         return jsonify({
-            'success': False,
-            'error': str(e),
-            'analysis_id': f"error-{uuid.uuid4().hex[:8]}"
+            "success": False,
+            "error": str(e)
         }), 500

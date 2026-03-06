@@ -4,7 +4,7 @@ This is a Flask backend application with an agentic AI system that analyzes pati
 
 ## Features
 
-- **Agentic AI Architecture**: Multi-agent system with 5 specialized agents
+- **Agentic AI Architecture**: Multi-agent system with 7 specialized agents (including reporting)
 - **Clinical Trial Matching**: Automated patient-trial eligibility analysis
 - **RESTful API**: Clean endpoints for frontend integration
 - **Real-time Processing**: Fast analysis with processing time tracking
@@ -18,6 +18,7 @@ The system uses 5 specialized agents that work together:
 3. **Trial Matching Agent** - Matches patients to eligible clinical trials
 4. **Risk Assessment Agent** - Identifies potential risks and contraindications
 5. **Recommendation Agent** - Generates clinical recommendations and next steps
+6. **Report Agent** - Assembles final report JSON combining patient profile, matches, and explanations
 
 ## API Endpoints
 

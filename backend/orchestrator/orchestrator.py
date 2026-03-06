@@ -132,18 +132,36 @@ class ClinicalTrialOrchestrator:
             workflow_state.patient_id = patient_id
             workflow_state.step = "trial_parsing"
             
-            # Step 4: Parse trials
+            # Step 4: Parse trials (Parallel execution)
             self.logger.info(f"{workflow_id}: Step 4 - Trial Parsing")
+
             parsed_trials = []
-            for trial_data in trials:
-                trial_parse_result = await self.trial_parser_agent.parse_trial_eligibility(
+
+            # Create async tasks for all trials
+            tasks = [
+                self.trial_parser_agent.parse_trial_eligibility(
                     trial_data.eligibility_text,
                     trial_data.trial_id
                 )
-                
+                for trial_data in trials
+            ]
+
+            # Execute all parsing tasks concurrently
+            trial_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Process results
+            for trial_data, trial_parse_result in zip(trials, trial_results):
+
+                if isinstance(trial_parse_result, Exception):
+                    self.logger.error(
+                        f"{workflow_id}: Trial parsing failed for {trial_data.trial_id}: {str(trial_parse_result)}"
+                    )
+                    continue
+
                 if trial_parse_result.get("success"):
-                    # Create ClinicalTrial object
+
                     criteria = TrialCriteria(**trial_parse_result.get("criteria", {}))
+
                     trial = ClinicalTrial(
                         trial_id=trial_data.trial_id,
                         trial_name=trial_data.trial_name,
@@ -159,12 +177,18 @@ class ClinicalTrialOrchestrator:
                         duration_months=trial_data.duration_months,
                         sponsor="Research Organization"
                     )
+
                     parsed_trials.append(trial)
-            
+
+                else:
+                    self.logger.warning(
+                        f"{workflow_id}: Trial parsing unsuccessful for {trial_data.trial_id}"
+                    )
+
             if not parsed_trials:
                 self.logger.error(f"{workflow_id}: No valid trials parsed")
                 return self._create_error_response(workflow_id, "No valid trials to match against")
-            
+
             workflow_state.step = "matching"
             
             # Step 5: Matching
