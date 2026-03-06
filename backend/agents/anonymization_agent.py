@@ -2,7 +2,7 @@ from typing import Dict, Any
 from loguru import logger
 from datetime import datetime
 
-from utils.anonymization_utils import AnonymizationUtils ## have to fixed this
+from utils.anonymization import AnonymizationUtils 
 from models.schemas import AnonymizedPatientProfile
 
 
@@ -51,7 +51,7 @@ class AnonymizationAgent:
                     anonymized_profile.get("height_cm")
                 ),
 
-                conditions=[anonymized_profile.get("disease", "Unknown")],
+                conditions=[anonymized_profile.get("disease", "Unknown")] if anonymized_profile.get("disease") else [],
 
                 lab_results=anonymized_profile.get("lab_results", {}),
 

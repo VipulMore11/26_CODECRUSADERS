@@ -2,61 +2,75 @@ from typing import Dict, Any
 from loguru import logger
 import json
 import base64
-from datetime import datetime
+import pandas as pd
+import pdfplumber
+import pytesseract
+from PIL import Image
+from io import BytesIO
+
 from models.schemas import PatientDataInput
 
 
 class IngestionAgent:
     """
-    Agent responsible for ingesting and validating patient data from various sources.
+    Agent responsible for ingesting patient data from structured and unstructured sources.
 
-    Handles JSON, PDF (base64), and image (base64) inputs and converts them
-    into a standardized raw format for downstream agents.
+    Supported inputs:
+    - JSON (structured)
+    - Excel (.xlsx structured)
+    - PDF (unstructured text extraction)
+    - Image (OCR extraction)
     """
 
     def __init__(self):
+
         self.logger = logger
+
         self.agent_id = "ingestion_agent"
+
         self.role = "Data Ingestion and Validation Specialist"
 
     async def ingest_patient_data(self, patient_data: PatientDataInput) -> Dict[str, Any]:
 
-        self.logger.info(
-            f"[IngestionAgent] Starting ingestion for data type: {patient_data.data_type}"
-        )
+        self.logger.info(f"[IngestionAgent] Processing {patient_data.data_type}")
 
         try:
+
             if not patient_data.content:
+
                 return {
                     "success": False,
-                    "error": "No content provided in patient data"
+                    "error": "No content provided"
                 }
 
             data_type = patient_data.data_type.lower()
 
             if data_type == "json":
+
                 raw_data = await self._process_json_data(patient_data.content)
 
             elif data_type == "pdf":
+
                 raw_data = await self._process_pdf_data(patient_data.content)
 
             elif data_type == "image":
+
                 raw_data = await self._process_image_data(patient_data.content)
 
+            elif data_type == "excel":
+
+                raw_data = await self._process_excel_data(patient_data.content)
+
             else:
+
                 return {
                     "success": False,
-                    "error": f"Unsupported data type: {patient_data.data_type}"
+                    "error": f"Unsupported data type: {data_type}"
                 }
 
-            # Attach metadata if available
-            if patient_data.metadata:
-                raw_data["metadata"] = patient_data.metadata
+            raw_data["source"] = data_type
 
-            raw_data["source"] = patient_data.data_type
-            raw_data["ingested_at"] = datetime.utcnow().isoformat()
-
-            self.logger.info("[IngestionAgent] Ingestion successful")
+            self.logger.info(f"[IngestionAgent] Successfully processed {data_type}")
 
             return {
                 "success": True,
@@ -69,68 +83,103 @@ class IngestionAgent:
 
             return {
                 "success": False,
-                "error": f"Ingestion failed: {str(e)}"
+                "error": str(e)
             }
 
-    async def _process_json_data(self, content: str) -> Dict[str, Any]:
+    # -----------------------------
+    # JSON PROCESSING
+    # -----------------------------
 
-        try:
+    async def _process_json_data(self, content: str):
 
-            data = json.loads(content)
+        data = json.loads(content)
 
-            if not isinstance(data, dict):
-                raise ValueError("JSON content must be a dictionary")
+        return {
+            "data_type": "json",
+            "content": data,
+            "extracted_text": json.dumps(data)
+        }
 
-            return {
-                "data_type": "json",
-                "content": data,
-                "validation_status": "valid"
-            }
+    # -----------------------------
+    # PDF PROCESSING
+    # -----------------------------
 
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON content: {str(e)}")
+    async def _process_pdf_data(self, content: str):
 
-    async def _process_pdf_data(self, content: str) -> Dict[str, Any]:
+        pdf_bytes = base64.b64decode(content)
 
-        try:
+        text = ""
 
-            pdf_bytes = base64.b64decode(content)
+        with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
 
-            return {
-                "data_type": "pdf",
-                "content": content,
-                "file_size": len(pdf_bytes),
-                "extracted_text": "PDF OCR extraction placeholder",
-                "validation_status": "valid"
-            }
+            for page in pdf.pages:
 
-        except Exception as e:
-            raise ValueError(f"Invalid PDF content: {str(e)}")
+                page_text = page.extract_text()
 
-    async def _process_image_data(self, content: str) -> Dict[str, Any]:
+                if page_text:
 
-        try:
+                    text += page_text + "\n"
 
-            image_bytes = base64.b64decode(content)
+        return {
+            "data_type": "pdf",
+            "extracted_text": text,
+            "file_size": len(pdf_bytes)
+        }
 
-            return {
-                "data_type": "image",
-                "content": content,
-                "file_size": len(image_bytes),
-                "extracted_text": "Image OCR extraction placeholder",
-                "validation_status": "valid"
-            }
+    # -----------------------------
+    # IMAGE PROCESSING (OCR)
+    # -----------------------------
 
-        except Exception as e:
-            raise ValueError(f"Invalid image content: {str(e)}")
+    async def _process_image_data(self, content: str):
 
-    def get_info(self) -> Dict[str, str]:
+        image_bytes = base64.b64decode(content)
+
+        image = Image.open(BytesIO(image_bytes))
+
+        text = pytesseract.image_to_string(image)
+
+        return {
+            "data_type": "image",
+            "extracted_text": text,
+            "file_size": len(image_bytes)
+        }
+
+    # -----------------------------
+    # EXCEL PROCESSING
+    # -----------------------------
+
+    async def _process_excel_data(self, content: str):
+
+        excel_bytes = base64.b64decode(content)
+
+        df = pd.read_excel(BytesIO(excel_bytes))
+
+        structured_data = df.to_dict(orient="records")
+
+        text_representation = df.to_string()
+
+        return {
+            "data_type": "excel",
+            "content": structured_data,
+            "extracted_text": text_representation,
+            "rows": len(df)
+        }
+
+    # -----------------------------
+    # INFO
+    # -----------------------------
+
+    def get_info(self):
 
         return {
             "agent_id": self.agent_id,
             "role": self.role,
-            "supported_formats": "JSON, PDF (base64), Image (base64)",
-            "processing_method": "Format validation and preprocessing"
+            "supported_formats": [
+                "JSON",
+                "PDF",
+                "Image (OCR)",
+                "Excel (.xlsx)"
+            ]
         }
 
 
