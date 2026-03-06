@@ -15,7 +15,7 @@ import {
   Bell,
   Share2,
 } from "lucide-react"
-import type { ClinicalTrial } from "@/app/trials/page"
+import type { ClinicalTrial } from "@/app/trials/types"
 
 interface TrialDetailProps {
   trial: ClinicalTrial
@@ -120,16 +120,128 @@ export function TrialDetail({ trial, onBack }: TrialDetailProps) {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Description */}
+          {/* Detailed Description */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Study Description</CardTitle>
+              <CardTitle className="text-lg">Study Overview</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">{trial.description}</p>
-              <div className="mt-4">
-                <h4 className="mb-2 font-medium text-foreground">Intervention</h4>
-                <p className="text-muted-foreground">{trial.intervention}</p>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="mb-2 font-medium text-foreground">Brief Summary</h4>
+                <p className="text-muted-foreground">{trial.fullDescription || trial.description}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Interventions & Treatments */}
+          {trial.interventions.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Interventions & Treatments</CardTitle>
+                <CardDescription>
+                  The specific treatments, drugs, or procedures being studied in this trial.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {trial.interventions.map((intervention, index) => (
+                    <div key={index} className="rounded-lg border border-border p-4 bg-muted/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          {intervention.type}
+                        </Badge>
+                        <h4 className="font-semibold text-foreground tracking-tight">{intervention.name}</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {intervention.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Collaborators & Investigators */}
+          {(trial.collaborators.length > 0 || trial.investigators.length > 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Collaborators & Investigators</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {trial.investigators.length > 0 && (
+                  <div>
+                    <h4 className="mb-3 flex items-center gap-2 font-medium text-foreground">
+                      <Users className="h-4 w-4 text-primary" />
+                      Investigators
+                    </h4>
+                    <ul className="grid gap-2 sm:grid-cols-2">
+                      {trial.investigators.map((investigator, index) => (
+                        <li key={index} className="text-sm text-muted-foreground">
+                          • {investigator}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {trial.collaborators.length > 0 && (
+                  <div>
+                    <h4 className="mb-3 flex items-center gap-2 font-medium text-foreground">
+                      <Building className="h-4 w-4 text-primary" />
+                      Collaborators
+                    </h4>
+                    <ul className="grid gap-2 sm:grid-cols-2">
+                      {trial.collaborators.map((collaborator, index) => (
+                        <li key={index} className="text-sm text-muted-foreground">
+                          • {collaborator}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Contact & Locations */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Contacts & Locations</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {/* Contacts */}
+              {trial.contacts.length > 0 && (
+                <div>
+                  <h4 className="mb-4 font-medium text-foreground">Study Contacts</h4>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {trial.contacts.map((contact, index) => (
+                      <div key={index} className="rounded-lg border border-border p-4">
+                        <p className="font-semibold text-foreground">{contact.name}</p>
+                        <p className="text-sm text-primary">{contact.role}</p>
+                        <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                          <p>{contact.email}</p>
+                          <p>{contact.phone}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Locations */}
+              <div>
+                <h4 className="mb-4 font-medium text-foreground">Study Locations</h4>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(trial.locations.length > 0 ? trial.locations : [trial.location]).map((loc, index) => (
+                    <div key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <div>
+                        {'name' in loc && <p className="font-medium text-foreground">{loc.name}</p>}
+                        <p>{loc.city}, {loc.state}, {loc.country}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

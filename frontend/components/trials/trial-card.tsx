@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Building, Users, Calendar, ChevronRight } from "lucide-react"
-import type { ClinicalTrial } from "@/app/trials/page"
+import type { ClinicalTrial } from "@/app/trials/types"
 
 interface TrialCardProps {
   trial: ClinicalTrial

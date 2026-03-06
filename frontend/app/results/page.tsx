@@ -377,7 +377,9 @@ function TrialMatchCard({
             </div>
           </div>
 
-          <h3 className="mb-2 text-lg font-semibold text-foreground">{trial.name}</h3>
+          <Link href={`/results/briefinfo?id=${trial.id}`} className="hover:underline decoration-primary/50 underline-offset-4">
+            <h3 className="mb-2 text-lg font-semibold text-foreground">{trial.name}</h3>
+          </Link>
           <p className="mb-4 text-sm text-muted-foreground">{trial.description}</p>
 
           <div className="flex flex-wrap gap-4 text-sm">
