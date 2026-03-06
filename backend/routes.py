@@ -2,16 +2,19 @@ from flask import Blueprint, request, jsonify
 import json
 import uuid
 from datetime import datetime
+from agents import WebScrapingAgent
+import asyncio
 
 agent_bp = Blueprint('agent', __name__, url_prefix='/api/agent')
 
 class AgenticAI:
     """
-    Simple agentic AI that analyzes patient-trial matching using multiple analysis agents.
-    Simulates the behavior of Google ADK agents for clinical trial analysis.
+    Agentic AI that scrapes clinical trials from the internet and analyzes patient-trial matching.
+    Uses multiple specialized agents for comprehensive analysis.
     """
 
     def __init__(self):
+        self.web_scraping_agent = WebScrapingAgent()
         self.agents = {
             'data_ingestion': self._data_ingestion_agent,
             'medical_analysis': self._medical_analysis_agent,
@@ -113,17 +116,28 @@ class AgenticAI:
             ]
         }
 
-    def analyze(self, patient_data, trials_data):
-        """Run complete agentic analysis pipeline"""
+    async def analyze(self, patient_data):
+        """Run complete agentic analysis pipeline with web scraping"""
         analysis_id = f"analysis-{uuid.uuid4().hex[:8]}"
         start_time = datetime.utcnow()
 
         results = {}
-        for agent_name, agent_func in self.agents.items():
-            try:
-                results[agent_name] = agent_func(patient_data, trials_data)
-            except Exception as e:
-                results[agent_name] = {'error': str(e)}
+
+        try:
+            # Step 1: Web scraping to get relevant trials
+            scraping_result = await self.web_scraping_agent.scrape_clinical_trials(patient_data)
+            results['web_scraping'] = scraping_result
+            trials_data = scraping_result.get('trials', [])
+
+            # Step 2-6: Run remaining agents with scraped trials
+            for agent_name, agent_func in self.agents.items():
+                try:
+                    results[agent_name] = agent_func(patient_data, trials_data)
+                except Exception as e:
+                    results[agent_name] = {'error': str(e)}
+
+        except Exception as e:
+            results['error'] = str(e)
 
         end_time = datetime.utcnow()
         processing_time = (end_time - start_time).total_seconds() * 1000
@@ -133,7 +147,8 @@ class AgenticAI:
             'success': True,
             'results': results,
             'processing_time_ms': processing_time,
-            'timestamp': end_time.isoformat()
+            'timestamp': end_time.isoformat(),
+            'trials_found': len(trials_data) if 'trials_data' in locals() else 0
         }
 
 # Initialize agentic AI
@@ -144,8 +159,15 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'ok',
-        'message': 'Agentic AI service is running',
-        'agents_available': list(agentic_ai.agents.keys())
+        'message': 'Clinical Trial Matching Agentic AI service is running',
+        'agents_available': list(agentic_ai.agents.keys()),
+        'features': [
+            'Web scraping from ClinicalTrials.gov',
+            'Automated trial discovery',
+            'Patient-trial matching analysis',
+            'Risk assessment',
+            'Clinical recommendations'
+        ]
     })
 
 @agent_bp.route('/analyze', methods=['POST'])
@@ -153,12 +175,15 @@ def analyze_patient_trials():
     """
     Endpoint that triggers agentic AI analysis for patient-trial matching.
 
-    Uses multiple specialized agents to analyze patient data against clinical trials:
-    1. Data Ingestion Agent - Validates and ingests input data
-    2. Medical Analysis Agent - Analyzes medical conditions and lab values
-    3. Trial Matching Agent - Matches patients to eligible trials
-    4. Risk Assessment Agent - Identifies potential risks and contraindications
-    5. Recommendation Agent - Generates clinical recommendations
+    Takes only patient health records as input, automatically scrapes relevant clinical trials
+    from ClinicalTrials.gov, then analyzes matching using multiple specialized agents:
+
+    1. Web Scraping Agent - Searches ClinicalTrials.gov for relevant trials
+    2. Data Ingestion Agent - Validates and ingests input data
+    3. Medical Analysis Agent - Analyzes medical conditions and lab values
+    4. Trial Matching Agent - Matches patients to eligible trials
+    5. Risk Assessment Agent - Identifies potential risks and contraindications
+    6. Recommendation Agent - Generates clinical recommendations
 
     Returns comprehensive analysis results from all agents.
     """
@@ -168,18 +193,16 @@ def analyze_patient_trials():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 
-        # Extract patient data
+        # Extract patient data (only required input now)
         patient_data = data.get('patient_data')
         if not patient_data:
             return jsonify({'error': 'patient_data is required'}), 400
 
-        # Extract trial data
-        trials_data = data.get('trials', [])
-        if not trials_data:
-            return jsonify({'error': 'trials data is required'}), 400
-
-        # Run agentic AI analysis
-        result = agentic_ai.analyze(patient_data, trials_data)
+        # Run agentic AI analysis (scraping + analysis) asynchronously
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(agentic_ai.analyze(patient_data))
+        loop.close()
 
         return jsonify(result)
 

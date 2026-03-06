@@ -41,6 +41,11 @@ try:
 except ImportError:
     ReportAgent = None
 
+try:
+    from agents.web_scraping_agent import WebScrapingAgent
+except ImportError:
+    WebScrapingAgent = None
+
 __all__ = [
     "IngestionAgent",
     "MedicalExtractionAgent",
@@ -49,4 +54,5 @@ __all__ = [
     "MatchingAgent",
     "ExplanationAgent",
     "ReportAgent",
+    "WebScrapingAgent",
 ]

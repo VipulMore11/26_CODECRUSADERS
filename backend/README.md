@@ -33,7 +33,7 @@ POST /api/agent/analyze
 ```
 Triggers the complete agentic AI analysis pipeline.
 
-**Request Body:**
+**Request Body (Patient Data Only):**
 ```json
 {
   "patient_data": {
@@ -42,16 +42,7 @@ Triggers the complete agentic AI analysis pipeline.
     "medications": ["metformin"],
     "allergies": [],
     "lab_results": {"HbA1c": 7.2}
-  },
-  "trials": [
-    {
-      "trial_id": "T001",
-      "trial_name": "Diabetes Study 2024",
-      "age_min": 30,
-      "age_max": 65,
-      "included_conditions": ["diabetes"]
-    }
-  ]
+  }
 }
 ```
 
@@ -61,13 +52,19 @@ Triggers the complete agentic AI analysis pipeline.
   "analysis_id": "analysis-a74960eb",
   "success": true,
   "results": {
+    "web_scraping": {
+      "trials": [...],
+      "total_found": 5,
+      "source": "ClinicalTrials.gov API"
+    },
     "data_ingestion": {...},
     "medical_analysis": {...},
     "trial_matching": {...},
     "risk_assessment": {...},
     "recommendation": {...}
   },
-  "processing_time_ms": 0.0,
+  "processing_time_ms": 1500.0,
+  "trials_found": 5,
   "timestamp": "2026-03-06T13:16:13.795887"
 }
 ```
