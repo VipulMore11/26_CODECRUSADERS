@@ -1,0 +1,36 @@
+# Ignore frontend folder
+
+my-app/
+
+# Node modules (if backend ever uses Node)
+
+node_modules/
+
+# Python cache (if backend is Python/Django)
+
+**pycache**/
+*.pyc
+
+# Virtual environments
+
+venv/
+.env/
+
+# Environment variables
+
+.env
+.env.local
+
+# Logs
+
+*.log
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# IDE files
+
+.vscode/
+.idea/
