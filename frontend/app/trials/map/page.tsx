@@ -151,9 +151,8 @@ export default function TrialMapPage() {
               {filteredTrials.map((trial) => (
                 <Card
                   key={trial.id}
-                  className={`cursor-pointer transition-all hover:border-primary/50 ${
-                    selectedTrial?.id === trial.id ? "border-primary bg-primary/5" : ""
-                  }`}
+                  className={`cursor-pointer transition-all hover:border-primary/50 ${selectedTrial?.id === trial.id ? "border-primary bg-primary/5" : ""
+                    }`}
                   onClick={() => setSelectedTrial(trial)}
                 >
                   <CardContent className="p-4">
@@ -162,13 +161,12 @@ export default function TrialMapPage() {
                         {trial.phase}
                       </Badge>
                       <Badge
-                        className={`text-xs ${
-                          trial.status === "Recruiting"
-                            ? "bg-success text-success-foreground"
-                            : trial.status === "Active"
+                        className={`text-xs ${trial.status === "Recruiting"
+                          ? "bg-success text-success-foreground"
+                          : trial.status === "Active"
                             ? "bg-primary text-primary-foreground"
                             : "bg-warning text-warning-foreground"
-                        }`}
+                          }`}
                       >
                         {trial.status}
                       </Badge>
