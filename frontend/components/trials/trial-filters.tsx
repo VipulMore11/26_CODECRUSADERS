@@ -10,7 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import type { TrialFiltersState } from "@/app/trials/page"
+import type { TrialFiltersState } from "@/app/trials/types"
 
 interface TrialFiltersProps {
   filters: TrialFiltersState
@@ -121,22 +121,20 @@ export function TrialFilters({
                   />
                   <Label htmlFor={`status-${status}`} className="cursor-pointer text-sm">
                     <span
-                      className={`inline-flex items-center gap-1.5 ${
-                        status === "Recruiting"
+                      className={`inline-flex items-center gap-1.5 ${status === "Recruiting"
                           ? "text-success"
                           : status === "Active"
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                      }`}
+                            ? "text-primary"
+                            : "text-muted-foreground"
+                        }`}
                     >
                       <span
-                        className={`h-2 w-2 rounded-full ${
-                          status === "Recruiting"
+                        className={`h-2 w-2 rounded-full ${status === "Recruiting"
                             ? "bg-success"
                             : status === "Active"
-                            ? "bg-primary"
-                            : "bg-muted-foreground"
-                        }`}
+                              ? "bg-primary"
+                              : "bg-muted-foreground"
+                          }`}
                       />
                       {status}
                     </span>
