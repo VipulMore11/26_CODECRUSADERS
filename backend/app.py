@@ -22,7 +22,21 @@ def create_app():
     @app.route('/')
     def home():
         return jsonify({
-            'message': 'Welcome to Flask App',
+            'message': 'Clinical Trial Matching Agentic AI API',
+            'version': '1.0.0',
+            'description': 'Agentic AI system that analyzes patient-trial matching using multiple specialized agents',
+            'endpoints': {
+                'health': '/api/agent/health',
+                'analyze': '/api/agent/analyze (POST)',
+                'docs': '/api/docs (if available)'
+            },
+            'agents': [
+                'data_ingestion',
+                'medical_analysis', 
+                'trial_matching',
+                'risk_assessment',
+                'recommendation'
+            ]
         })
     
     # Error handlers

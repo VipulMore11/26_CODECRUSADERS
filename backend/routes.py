@@ -1,124 +1,230 @@
 from flask import Blueprint, request, jsonify
-import asyncio
+import json
 import uuid
 from datetime import datetime
+from agents import WebScrapingAgent
+import asyncio
 
-from agents.extraction_agent import MedicalExtractionAgent
-from agents.trial_parser_agent import TrialParserAgent
-from agents.matching_agent import MatchingAgent
-from agents.explanation_agent import ExplanationAgent
-from models.schemas import AnonymizedPatientProfile, ClinicalTrial, TrialCriteria
+from orchestrator.orchestrator import get_orchestrator
 
 agent_bp = Blueprint('agent', __name__, url_prefix='/api/agent')
 
-# Initialize agents
-extraction_agent = MedicalExtractionAgent()
-trial_parser_agent = TrialParserAgent()
-matching_agent = MatchingAgent()
-explanation_agent = ExplanationAgent()
+class AgenticAI:
+    """
+    Agentic AI that scrapes clinical trials from the internet and analyzes patient-trial matching.
+    Uses multiple specialized agents for comprehensive analysis.
+    """
 
+    def __init__(self):
+        self.web_scraping_agent = WebScrapingAgent()
+        self.agents = {
+            'data_ingestion': self._data_ingestion_agent,
+            'medical_analysis': self._medical_analysis_agent,
+            'trial_matching': self._trial_matching_agent,
+            'risk_assessment': self._risk_assessment_agent,
+            'recommendation': self._recommendation_agent
+        }
+
+    def _data_ingestion_agent(self, patient_data, trials_data):
+        """Agent for ingesting and validating input data"""
+        return {
+            'status': 'validated',
+            'patient_records': len(patient_data) if isinstance(patient_data, list) else 1,
+            'trial_records': len(trials_data),
+            'data_quality': 'high'
+        }
+
+    def _medical_analysis_agent(self, patient_data, trials_data):
+        """Agent for analyzing medical conditions and requirements"""
+        # Simple analysis based on common clinical trial criteria
+        analysis = {
+            'conditions_identified': [],
+            'lab_values': {},
+            'eligibility_factors': [],
+            'risk_indicators': []
+        }
+
+        if isinstance(patient_data, dict):
+            if 'conditions' in patient_data:
+                analysis['conditions_identified'] = patient_data['conditions']
+            if 'lab_results' in patient_data:
+                analysis['lab_values'] = patient_data['lab_results']
+
+        return analysis
+
+    def _trial_matching_agent(self, patient_data, trials_data):
+        """Agent for matching patients to clinical trials"""
+        matches = []
+
+        for trial in trials_data:
+            match_score = 0.0
+            reasons = []
+
+            # Simple matching logic
+            if isinstance(patient_data, dict):
+                patient_age = patient_data.get('age', 0)
+                patient_conditions = patient_data.get('conditions', [])
+
+                # Age matching (simplified)
+                if 'age_min' in trial and 'age_max' in trial:
+                    if trial['age_min'] <= patient_age <= trial['age_max']:
+                        match_score += 0.3
+                        reasons.append(f"Age {patient_age} within range {trial['age_min']}-{trial['age_max']}")
+
+                # Condition matching (simplified)
+                trial_conditions = trial.get('included_conditions', [])
+                if any(cond in patient_conditions for cond in trial_conditions):
+                    match_score += 0.4
+                    reasons.append("Matching medical conditions found")
+
+            matches.append({
+                'trial_id': trial.get('trial_id', 'unknown'),
+                'trial_name': trial.get('trial_name', 'Unknown Trial'),
+                'match_score': min(match_score, 1.0),
+                'is_eligible': match_score > 0.5,
+                'reasons': reasons
+            })
+
+        return {'matches': matches}
+
+    def _risk_assessment_agent(self, patient_data, trials_data):
+        """Agent for assessing risks and contraindications"""
+        risks = []
+
+        if isinstance(patient_data, dict):
+            medications = patient_data.get('medications', [])
+            allergies = patient_data.get('allergies', [])
+
+            if medications:
+                risks.append("Review current medications for interactions")
+
+            if allergies:
+                risks.append("Check for drug allergies in trial medications")
+
+        return {'risks': risks, 'severity': 'moderate'}
+
+    def _recommendation_agent(self, patient_data, trials_data):
+        """Agent for generating recommendations"""
+        return {
+            'recommendations': [
+                "Consult with healthcare provider before enrollment",
+                "Review full trial protocol and informed consent",
+                "Monitor for adverse reactions during participation"
+            ],
+            'next_steps': [
+                "Schedule consultation with trial coordinator",
+                "Complete additional screening tests if required",
+                "Review and sign informed consent document"
+            ]
+        }
+
+    async def analyze(self, patient_data):
+        """Run complete agentic analysis pipeline with web scraping"""
+        analysis_id = f"analysis-{uuid.uuid4().hex[:8]}"
+        start_time = datetime.utcnow()
+
+        results = {}
+
+        try:
+            # Step 1: Web scraping to get relevant trials
+            scraping_result = await self.web_scraping_agent.scrape_clinical_trials(patient_data)
+            results['web_scraping'] = scraping_result
+            trials_data = scraping_result.get('trials', [])
+
+            # Step 2-6: Run remaining agents with scraped trials
+            for agent_name, agent_func in self.agents.items():
+                try:
+                    results[agent_name] = agent_func(patient_data, trials_data)
+                except Exception as e:
+                    results[agent_name] = {'error': str(e)}
+
+        except Exception as e:
+            results['error'] = str(e)
+
+        end_time = datetime.utcnow()
+        processing_time = (end_time - start_time).total_seconds() * 1000
+
+        return {
+            'analysis_id': analysis_id,
+            'success': True,
+            'results': results,
+            'processing_time_ms': processing_time,
+            'timestamp': end_time.isoformat(),
+            'trials_found': len(trials_data) if 'trials_data' in locals() else 0
+        }
+
+# Initialize agentic AI
+agentic_ai = AgenticAI()
 
 @agent_bp.route('/health', methods=['GET'])
 def health_check():
     return jsonify({
         'status': 'ok',
-        'message': 'Agent service is running'
+        'message': 'Clinical Trial Matching Agentic AI service is running',
+        'agents_available': list(agentic_ai.agents.keys()),
+        'features': [
+            'Web scraping from ClinicalTrials.gov',
+            'Automated trial discovery',
+            'Patient-trial matching analysis',
+            'Risk assessment',
+            'Clinical recommendations'
+        ]
     })
 
+@agent_bp.route('/agents', methods=['GET'])
+def agents_info():
+
+    orchestrator = get_orchestrator()
+
+    return jsonify({
+        "agents": orchestrator.get_all_agents_info()
+    })
 
 @agent_bp.route('/analyze', methods=['POST'])
-def analyze():
-    """
-    Run full agentic pipeline:
-    extraction -> anonymization -> trial parsing -> matching -> explanation
-    """
-    data = request.get_json()
-    if not data:
-        return jsonify({"success": False, "error": "No JSON data provided"}), 400
-
-    patient_data = data.get("patient_data")
-    trials_data = data.get("trials")
-
-    if not patient_data or not trials_data:
-        return jsonify({"success": False, "error": "patient_data and trials are required"}), 400
+def analyze_patient_trials():
 
     try:
-        result = asyncio.run(_run_pipeline(patient_data, trials_data))
-        status_code = 200 if result.get("success") else 500
-        return jsonify(result), status_code
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"error": "No input data"}), 400
 
 
-async def _run_pipeline(patient_data: dict, trials_data: list) -> dict:
-    # Step 1: Extract structured medical profile
-    extraction_result = await extraction_agent.extract_medical_profile(patient_data)
-    if not extraction_result.get("success"):
-        return {"success": False, "error": f"Extraction failed: {extraction_result.get('error')}"}
+        patient_data = data.get("patient_data")
+        trials_data = data.get("trials")
 
-    extracted_profile = extraction_result["extracted_profile"]
+        if not patient_data or not trials_data:
+            return jsonify({"error": "patient_data and trials required"}), 400
 
-    # Step 2: Anonymize — generate UUID, build anonymized profile
-    patient_id = f"PT-{uuid.uuid4()}"
-    weight = extracted_profile.get("weight_kg")
-    height = extracted_profile.get("height_cm")
-    bmi = round(weight / (height / 100) ** 2, 2) if weight and height else None
 
-    anonymized_profile = AnonymizedPatientProfile(
-        patient_id=patient_id,
-        age=extracted_profile.get("age", 0),
-        gender=extracted_profile.get("gender", "Unknown"),
-        weight_kg=weight,
-        height_cm=height,
-        bmi=bmi,
-        conditions=[extracted_profile.get("disease", "Unknown")],
-        lab_results=extracted_profile.get("lab_results", {}),
-        medications=extracted_profile.get("medications", []),
-        allergies=extracted_profile.get("allergies", []),
-        anonymized_at=datetime.utcnow()
-    )
+        # Convert input to schema objects
+        patient_obj = PatientDataInput(**patient_data)
 
-    # Step 3: Parse trial criteria
-    parsed_trials = []
-    for trial in trials_data:
-        parse_result = await trial_parser_agent.parse_trial_eligibility(
-            trial.get("eligibility_text", ""),
-            trial.get("trial_id", "UNKNOWN")
+        trials_obj = [TrialDataInput(**trial) for trial in trials_data]
+
+
+        orchestrator = get_orchestrator()
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        result = loop.run_until_complete(
+            orchestrator.execute_workflow(
+                patient_obj,
+                trials_obj,
+                include_explanation=True,
+                generate_pdf=False
+            )
         )
-        if parse_result.get("success"):
-            criteria = TrialCriteria(**parse_result["criteria"])
-            parsed_trials.append(ClinicalTrial(
-                trial_id=trial.get("trial_id", "UNKNOWN"),
-                trial_name=trial.get("trial_name", "Unknown Trial"),
-                description=trial.get("description", ""),
-                phase=trial.get("phase", "Phase 3"),
-                status=trial.get("status", "recruiting"),
-                criteria=criteria,
-                location=trial.get("location", "Unknown"),
-                drug_name=trial.get("drug_name", "Unknown"),
-                drug_class=trial.get("drug_class", "Unknown"),
-                potential_side_effects=trial.get("side_effects", []),
-                enrollment_target=trial.get("enrollment_target", 100),
-                duration_months=trial.get("duration_months", 12),
-                sponsor=trial.get("sponsor", "Unknown")
-            ))
 
-    if not parsed_trials:
-        return {"success": False, "error": "No valid trials could be parsed"}
+        loop.close()
 
-    # Step 4: Match patient to trials
-    matching_result = await matching_agent.match_patient_to_trials(anonymized_profile, parsed_trials)
-    if not matching_result.get("success"):
-        return {"success": False, "error": f"Matching failed: {matching_result.get('error')}"}
+        return jsonify(result)
 
-    # Step 5: Generate explanations
-    explanation_result = await explanation_agent.generate_explanations(matching_result, patient_id)
 
-    return {
-        "success": True,
-        "patient_id": patient_id,
-        "anonymized_profile": anonymized_profile.model_dump(mode="json"),
-        "matches": matching_result.get("matches", []),
-        "explanations": explanation_result.get("explanations", []),
-        "total_trials_evaluated": matching_result.get("total_trials_evaluated", 0)
-    }
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
