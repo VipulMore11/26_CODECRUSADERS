@@ -13,9 +13,9 @@ export function PulseIcon({ className }: { className?: string }) {
             <path
                 d="M30 90H60L75 60L95 120L115 40L135 110L150 90H180"
                 stroke="currentColor"
-                stroke-width="14"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                strokeWidth="14"
+                strokeLinecap="round"
+                strokeLinejoin="round"
             />
         </svg>
     )
