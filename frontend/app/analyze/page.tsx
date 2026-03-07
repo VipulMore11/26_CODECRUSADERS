@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Header } from "@/components/landing/header"
 import { Footer } from "@/components/landing/footer"
@@ -17,7 +17,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Activity, Dna, Brain, Heart, Sparkles, ArrowRight, Search, FileText } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { treatments } from "./data"
 import { TreatmentCard } from "@/components/analyze/treatment-card"
 
@@ -33,8 +33,12 @@ const categoryIcons: Record<string, React.ReactNode> = {
 
 export default function AnalyzePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
+
+  // Check if analysis has been performed via query param
+  const hasMatched = searchParams.get("matched") === "true"
 
   const filteredTreatments = treatments.filter(treatment => {
     if (search) {
@@ -125,11 +129,23 @@ export default function AnalyzePage() {
         </Card>
 
         {/* Treatment Grid */}
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-foreground">
+            {hasMatched ? "Personalized Recommendations" : "Available Treatments"}
+          </h2>
+          {hasMatched && (
+            <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+              AI Analysis Active
+            </Badge>
+          )}
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredTreatments.map(treatment => (
             <TreatmentCard
               key={treatment.id}
               treatment={treatment}
+              showMetrics={false}
               onClick={() => router.push(`/analyze/detailinfo?id=${treatment.id}`)}
             />
           ))}

@@ -8,9 +8,10 @@ import { Treatment } from "@/app/analyze/types"
 interface TreatmentCardProps {
     treatment: Treatment
     onClick?: () => void
+    showMetrics?: boolean
 }
 
-export function TreatmentCard({ treatment, onClick }: TreatmentCardProps) {
+export function TreatmentCard({ treatment, onClick, showMetrics = true }: TreatmentCardProps) {
     const typeColors: Record<string, string> = {
         Medication: "bg-blue-500",
         Procedure: "bg-green-500",
@@ -35,13 +36,15 @@ export function TreatmentCard({ treatment, onClick }: TreatmentCardProps) {
                 <h3 className="mb-2 text-lg font-semibold text-foreground">{treatment.name}</h3>
                 <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{treatment.description}</p>
 
-                <div className="mb-4">
-                    <div className="mb-1 flex justify-between text-sm">
-                        <span className="text-muted-foreground">Success Rate</span>
-                        <span className="font-medium text-foreground">{treatment.successRate}%</span>
+                {showMetrics && (
+                    <div className="mb-4">
+                        <div className="mb-1 flex justify-between text-sm">
+                            <span className="text-muted-foreground">Success Rate</span>
+                            <span className="font-medium text-foreground">{treatment.successRate}%</span>
+                        </div>
+                        <Progress value={treatment.successRate} className="h-2" />
                     </div>
-                    <Progress value={treatment.successRate} className="h-2" />
-                </div>
+                )}
 
                 <div className="flex flex-wrap gap-1">
                     {treatment.conditions.slice(0, 2).map(condition => (

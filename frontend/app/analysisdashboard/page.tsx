@@ -120,7 +120,7 @@ export default function AnalysisDashboardPage() {
             sessionStorage.setItem("analysisType", "file")
             sessionStorage.setItem("patientId", patientId)
             setTimeout(() => {
-                router.push("/analyze")
+                router.push("/analyze?matched=true")
             }, 2000)
         }
     }
@@ -138,7 +138,7 @@ export default function AnalysisDashboardPage() {
         }
         sessionStorage.setItem("analysisType", "manual")
         sessionStorage.setItem("patientData", JSON.stringify(patientData))
-        router.push("/analyze")
+        router.push("/analyze?matched=true")
     }
 
     const toggleCondition = (condition: string) => {

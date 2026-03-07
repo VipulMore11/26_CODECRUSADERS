@@ -171,11 +171,10 @@ export default function ReportPage() {
                       return (
                         <div
                           key={section.id}
-                          className={`flex items-start gap-4 rounded-lg border p-4 transition-colors ${
-                            isSelected
-                              ? "border-primary/50 bg-primary/5"
-                              : "border-border hover:border-muted-foreground/30"
-                          } ${section.required ? "cursor-not-allowed" : "cursor-pointer"}`}
+                          className={`flex items-start gap-4 rounded-lg border p-4 transition-colors ${isSelected
+                            ? "border-primary/50 bg-primary/5"
+                            : "border-border hover:border-muted-foreground/30"
+                            } ${section.required ? "cursor-not-allowed" : "cursor-pointer"}`}
                           onClick={() => toggleSection(section.id)}
                         >
                           <Checkbox
