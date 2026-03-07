@@ -139,17 +139,10 @@ export default function TrialMapPage() {
                       </Badge>
                       <Badge
                         className={`text-xs ${trial.status === "Recruiting"
-<<<<<<< HEAD
                           ? "bg-success text-success-foreground"
                           : trial.status === "Active"
                             ? "bg-primary text-primary-foreground"
                             : "bg-warning text-warning-foreground"
-=======
-                            ? "bg-success text-success-foreground"
-                            : trial.status === "Active"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-warning text-warning-foreground"
->>>>>>> 571919e1830c3a11ae8aaed1ee0027a71b5b5420
                           }`}
                       >
                         {trial.status}

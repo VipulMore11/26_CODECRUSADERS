@@ -14,10 +14,12 @@ interface MapTrial {
   enrollmentCount: number
 }
 
+import { ClinicalTrial } from "@/app/trials/types"
+
 interface TrialMapViewProps {
-  trials: MapTrial[]
-  selectedTrial: MapTrial | null
-  onTrialSelect: (trial: MapTrial | null) => void
+  trials: ClinicalTrial[]
+  selectedTrial: ClinicalTrial | null
+  onTrialSelect: (trial: ClinicalTrial | null) => void
   center: { lat: number; lng: number }
 }
 
@@ -136,20 +138,18 @@ export function TrialMapView({ trials, selectedTrial, onTrialSelect }: TrialMapV
           return (
             <button
               key={trial.id}
-              className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 transition-all ${
-                isSelected ? "z-20 scale-125" : "hover:z-20 hover:scale-110"
-              }`}
+              className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 transition-all ${isSelected ? "z-20 scale-125" : "hover:z-20 hover:scale-110"
+                }`}
               style={{ left: `${x}%`, top: `${y}%` }}
               onClick={() => onTrialSelect(isSelected ? null : trial)}
             >
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full shadow-lg ${
-                  trial.status === "Recruiting"
+                className={`flex h-8 w-8 items-center justify-center rounded-full shadow-lg ${trial.status === "Recruiting"
                     ? "bg-success"
                     : trial.status === "Active"
-                    ? "bg-primary"
-                    : "bg-warning"
-                } ${isSelected ? "ring-4 ring-background" : ""}`}
+                      ? "bg-primary"
+                      : "bg-warning"
+                  } ${isSelected ? "ring-4 ring-background" : ""}`}
               >
                 <MapPin className="h-4 w-4 text-white" />
               </div>

@@ -259,7 +259,7 @@ export default function AnalyzePage() {
               </div>
             </div>
             <Button asChild className="gap-2">
-              <Link href="/dashboard">
+              <Link href="/analysisdashboard">
                 Start Matching
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -522,7 +522,7 @@ function TreatmentDetail({ treatment, onBack }: { treatment: Treatment; onBack: 
       {/* CTA */}
       <div className="flex flex-col gap-4 sm:flex-row">
         <Button asChild className="flex-1 gap-2">
-          <Link href="/dashboard">
+          <Link href="/analysisdashboard">
             <FileText className="h-4 w-4" />
             Check Compatibility with My Records
           </Link>
