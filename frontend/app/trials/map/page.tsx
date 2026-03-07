@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Header } from "@/components/landing/header"
-import { Footer } from "@/components/landing/footer"
 import { TrialMapView } from "@/components/trials/trial-map-view"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -29,6 +28,21 @@ export default function TrialMapPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [userLocation] = useState({ lat: 39.8283, lng: -98.5795 }) // Center of USA
 
+  // Helper to calculate distance in miles
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 3958.8 // Radius of the Earth in miles
+    const dLat = ((lat2 - lat1) * Math.PI) / 180
+    const dLon = ((lon2 - lon1) * Math.PI) / 180
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
+
   const filteredTrials = useMemo(() => {
     return mockTrials.filter((trial) => {
       // Search filter
@@ -47,9 +61,20 @@ export default function TrialMapPage() {
         return false
       }
 
+      // Distance filter
+      const distance = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        trial.location.lat,
+        trial.location.lng
+      )
+      if (distance > distanceFilter[0]) {
+        return false
+      }
+
       return true
     })
-  }, [search, statusFilter])
+  }, [search, statusFilter, distanceFilter, userLocation])
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -228,7 +253,6 @@ export default function TrialMapPage() {
           )}
         </main>
       </div>
-      <Footer />
     </div>
   )
 }
