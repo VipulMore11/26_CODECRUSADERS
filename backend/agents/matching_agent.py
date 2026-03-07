@@ -1,4 +1,8 @@
 from typing import Dict, Any, List
+import numpy as np
+import torch
+from transformers import BertTokenizer, BertModel
+from sklearn.metrics.pairwise import cosine_similarity
 from loguru import logger
 from models.schemas import TrialMatchResult, EligibilityMatch, ClinicalTrial, AnonymizedPatientProfile
 
@@ -6,18 +10,25 @@ class MatchingAgent:
     """
     Agent responsible for comparing patient profiles with trial criteria.
     
-    Implements rule-based eligibility scoring with:
-    - Age match
-    - Disease match
-    - Lab result match
-    - Medication restrictions
-    - BMI match
+    Uses BioBERT (dmis-lab/biobert-base-cased-v1.1) embeddings to compute
+    semantic similarity between patient profiles and trial eligibility criteria.
+    Rule-based checks are retained for explainability details consumed by
+    the downstream ExplanationAgent.
     """
+
+    ELIGIBILITY_THRESHOLD = 0.75
+    MODEL_NAME = "dmis-lab/biobert-base-cased-v1.1"
     
     def __init__(self):
         self.logger = logger
         self.agent_id = "matching_agent"
         self.role = "Patient-Trial Matching Specialist"
+
+        self.logger.info(f"Loading BioBERT model: {self.MODEL_NAME}")
+        self.tokenizer = BertTokenizer.from_pretrained(self.MODEL_NAME)
+        self.model = BertModel.from_pretrained(self.MODEL_NAME)
+        self.model.eval()
+        self.logger.info("BioBERT model loaded successfully")
     
     async def match_patient_to_trials(
         self,
@@ -62,11 +73,113 @@ class MatchingAgent:
                 "error": str(e)
             }
     
+    def _patient_to_text(self, patient: AnonymizedPatientProfile) -> str:
+        """Convert patient profile to natural language summary for embedding."""
+        parts = [f"{patient.age}-year-old {patient.gender} patient"]
+
+        if patient.bmi:
+            parts.append(f"with BMI {patient.bmi:.1f}")
+
+        if patient.conditions:
+            parts.append(f"Conditions: {', '.join(patient.conditions)}.")
+        else:
+            parts.append("No known medical conditions.")
+
+        if patient.lab_results:
+            lab_strs = [f"{name} {value}" for name, value in patient.lab_results.items()]
+            parts.append(f"Lab results: {', '.join(lab_strs)}.")
+
+        if patient.medications:
+            parts.append(f"Current medications: {', '.join(patient.medications)}.")
+
+        if patient.allergies:
+            parts.append(f"Allergies: {', '.join(patient.allergies)}.")
+
+        return " ".join(parts)
+
+    def _trial_to_text(self, trial: ClinicalTrial) -> str:
+        """Convert trial eligibility criteria to natural language description for embedding."""
+        criteria = trial.criteria
+        parts = [f"Clinical trial for patients"]
+
+        if criteria.age_min and criteria.age_max:
+            parts.append(f"aged {criteria.age_min} to {criteria.age_max}")
+        elif criteria.age_min:
+            parts.append(f"aged {criteria.age_min} and older")
+        elif criteria.age_max:
+            parts.append(f"aged up to {criteria.age_max}")
+
+        if criteria.included_conditions:
+            parts.append(f"with {', '.join(criteria.included_conditions)}.")
+        else:
+            parts.append("with no specific condition requirement.")
+
+        if criteria.bmi_min and criteria.bmi_max:
+            parts.append(f"BMI range {criteria.bmi_min} to {criteria.bmi_max}.")
+        elif criteria.bmi_min:
+            parts.append(f"BMI at least {criteria.bmi_min}.")
+        elif criteria.bmi_max:
+            parts.append(f"BMI up to {criteria.bmi_max}.")
+
+        if criteria.required_lab_tests:
+            lab_parts = []
+            for lab_name, bounds in criteria.required_lab_tests.items():
+                lo = bounds.get("min")
+                hi = bounds.get("max")
+                if lo and hi:
+                    lab_parts.append(f"{lab_name} between {lo} and {hi}")
+                elif lo:
+                    lab_parts.append(f"{lab_name} at least {lo}")
+                elif hi:
+                    lab_parts.append(f"{lab_name} up to {hi}")
+            if lab_parts:
+                parts.append(f"Required lab values: {', '.join(lab_parts)}.")
+
+        if criteria.excluded_medications:
+            parts.append(f"Excluded medications: {', '.join(criteria.excluded_medications)}.")
+
+        if criteria.excluded_conditions:
+            parts.append(f"Excluded conditions: {', '.join(criteria.excluded_conditions)}.")
+
+        return " ".join(parts)
+
+    def _get_embedding(self, text: str) -> np.ndarray:
+        """Generate a fixed-size embedding for text using BioBERT with mean pooling."""
+        inputs = self.tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=512,
+            padding=True,
+        )
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+
+        # Mean pooling: average last hidden state over tokens, masking padding
+        attention_mask = inputs["attention_mask"].unsqueeze(-1)  # (1, seq_len, 1)
+        hidden_state = outputs.last_hidden_state  # (1, seq_len, hidden_dim)
+        masked = hidden_state * attention_mask
+        summed = masked.sum(dim=1)  # (1, hidden_dim)
+        counts = attention_mask.sum(dim=1).clamp(min=1)  # avoid division by zero
+        embedding = (summed / counts).squeeze(0)  # (hidden_dim,)
+        return embedding.numpy()
+
     def _match_patient_to_trial(self, patient: AnonymizedPatientProfile, trial: ClinicalTrial) -> Dict:
-        """Match single patient to single trial"""
+        """Match single patient to single trial using BioBERT cosine similarity."""
+        # --- BioBERT semantic scoring ---
+        patient_text = self._patient_to_text(patient)
+        trial_text = self._trial_to_text(trial)
+
+        patient_emb = self._get_embedding(patient_text).reshape(1, -1)
+        trial_emb = self._get_embedding(trial_text).reshape(1, -1)
+
+        similarity = float(cosine_similarity(patient_emb, trial_emb)[0][0])
+        overall_score = round(max(0.0, min(1.0, similarity)), 4)
+        is_eligible = overall_score >= self.ELIGIBILITY_THRESHOLD
+
+        # --- Rule-based detail checks (for explainability only) ---
         criteria = trial.criteria
         details = []
-        scores = []
         matched_criteria = []
         unmatched_criteria = []
         risk_factors = []
@@ -78,8 +191,7 @@ class MatchingAgent:
         else:
             unmatched_criteria.append("age")
         details.append(age_match)
-        scores.append(age_match["confidence_score"])
-        
+
         # Disease/Condition matching
         disease_match = self._match_conditions(patient.conditions, criteria.included_conditions, criteria.excluded_conditions)
         if disease_match["matched"]:
@@ -87,8 +199,7 @@ class MatchingAgent:
         else:
             unmatched_criteria.append("disease")
         details.append(disease_match)
-        scores.append(disease_match["confidence_score"])
-        
+
         # Lab results matching
         required_labs = getattr(criteria, "required_lab_tests", None)
         if required_labs:
@@ -98,8 +209,7 @@ class MatchingAgent:
             else:
                 unmatched_criteria.append("lab_results")
             details.append(lab_match)
-            scores.append(lab_match["confidence_score"])
-        
+
         # BMI matching
         if criteria.bmi_min or criteria.bmi_max:
             bmi_match = self._match_bmi(patient.bmi, criteria.bmi_min, criteria.bmi_max)
@@ -108,8 +218,7 @@ class MatchingAgent:
             else:
                 unmatched_criteria.append("bmi")
             details.append(bmi_match)
-            scores.append(bmi_match["confidence_score"])
-        
+
         # Medication restrictions
         med_match = self._match_medications(patient.medications, criteria.excluded_medications or [])
         if med_match["matched"]:
@@ -117,22 +226,16 @@ class MatchingAgent:
         else:
             unmatched_criteria.append("medications")
         details.append(med_match)
-        scores.append(med_match["confidence_score"])
-        
+
         # Check for risk factors
         hba1c = patient.lab_results.get("HbA1c")
-
         if hba1c and hba1c > 8.5:
             risk_factors.append("High HbA1c level")
-        
-        # Calculate overall eligibility score
-        overall_score = sum(scores) / len(scores) if scores else 0.0
-        is_eligible = overall_score >= 0.7 and len(unmatched_criteria) <= 1
-        
+
         return {
             "trial_id": trial.trial_id,
             "trial_name": trial.trial_name,
-            "eligibility_score": round(overall_score, 2),
+            "eligibility_score": overall_score,
             "is_eligible": is_eligible,
             "matched_criteria": matched_criteria,
             "unmatched_criteria": unmatched_criteria,

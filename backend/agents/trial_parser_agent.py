@@ -1,219 +1,110 @@
 from typing import Dict, Any, List
 from loguru import logger
-import re
+import json
 from models.schemas import TrialCriteria
+from utils.gemini_client import generate_json
+
+TRIAL_PARSER_SYSTEM_PROMPT = """You are a clinical trial eligibility criteria parser. Your job is to
+convert free-text eligibility descriptions into structured criteria.
+
+You will receive one or more trials. Return a JSON array where each element corresponds to one trial:
+[
+  {
+    "trial_id": "<the trial_id provided>",
+    "age_min": <integer or null>,
+    "age_max": <integer or null>,
+    "gender": ["M", "F"] or null,
+    "included_conditions": ["condition1", ...],
+    "excluded_conditions": ["condition1", ...],
+    "excluded_medications": ["medication1", ...],
+    "bmi_min": <float or null>,
+    "bmi_max": <float or null>,
+    "inclusion_text": "<extracted inclusion criteria text>",
+    "exclusion_text": "<extracted exclusion criteria text>"
+  }
+]
+
+Rules:
+- Return one object per trial, in the same order as the input.
+- Parse BOTH inclusion and exclusion criteria carefully.
+- included_conditions: conditions the patient MUST have to participate.
+- excluded_conditions: conditions that DISQUALIFY a patient.
+- excluded_medications: medications that DISQUALIFY a patient.
+- Gender should be a list of "M" and/or "F", or null if not specified.
+- If a value cannot be determined from the text, use null (for scalars) or [] (for lists).
+- Return ONLY a valid JSON array."""
 
 
 class TrialParserAgent:
-
     """
-    Converts clinical trial eligibility text into structured criteria.
+    Converts clinical trial eligibility text into structured criteria using Gemini LLM.
     """
 
     def __init__(self):
-
         self.logger = logger
         self.agent_id = "trial_parser_agent"
         self.role = "Clinical Trial Criteria Parser"
 
     async def parse_trial_eligibility(self, trial_text: str, trial_id: str = "UNKNOWN") -> Dict[str, Any]:
+        """Parse a single trial (delegates to batch method)."""
+        results = await self.parse_all_trials([{"trial_id": trial_id, "eligibility_text": trial_text}])
+        if results and results[0].get("success"):
+            return results[0]
+        return {"success": False, "trial_id": trial_id, "error": "Parsing failed"}
 
-        self.logger.info(f"[TrialParserAgent] Parsing criteria for {trial_id}")
+    async def parse_all_trials(self, trials: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Parse all trials in a single Gemini call."""
+
+        self.logger.info(f"[TrialParserAgent] Batch parsing {len(trials)} trials")
 
         try:
+            trials_input = [
+                {"trial_id": t.get("trial_id", "UNKNOWN"), "eligibility_text": t.get("eligibility_text", "")}
+                for t in trials
+            ]
 
-            inclusion_section = self._extract_section(trial_text, "inclusion")
+            prompt = f"Parse the following {len(trials_input)} clinical trial eligibility texts into structured criteria:\n\n{json.dumps(trials_input, indent=2)}"
 
-            exclusion_section = self._extract_section(trial_text, "exclusion")
+            parsed_list = generate_json(TRIAL_PARSER_SYSTEM_PROMPT, prompt)
 
-            criteria = TrialCriteria(
+            if not isinstance(parsed_list, list):
+                parsed_list = [parsed_list]
 
-                age_min=self._extract_age_min(inclusion_section),
+            results = []
+            for parsed in parsed_list:
+                try:
+                    criteria = TrialCriteria(
+                        age_min=parsed.get("age_min"),
+                        age_max=parsed.get("age_max"),
+                        gender=parsed.get("gender"),
+                        included_conditions=parsed.get("included_conditions", []),
+                        excluded_conditions=parsed.get("excluded_conditions", []),
+                        excluded_medications=parsed.get("excluded_medications", []),
+                        bmi_min=parsed.get("bmi_min"),
+                        bmi_max=parsed.get("bmi_max"),
+                    )
+                    results.append({
+                        "success": True,
+                        "trial_id": parsed.get("trial_id", "UNKNOWN"),
+                        "criteria": criteria.model_dump(),
+                        "inclusion_text": parsed.get("inclusion_text", ""),
+                        "exclusion_text": parsed.get("exclusion_text", ""),
+                    })
+                except Exception as e:
+                    self.logger.warning(f"[TrialParserAgent] Failed to parse one trial: {e}")
 
-                age_max=self._extract_age_max(inclusion_section),
-
-                gender=self._extract_gender(inclusion_section),
-
-                included_conditions=self._extract_conditions(inclusion_section),
-
-                excluded_conditions=self._extract_conditions(exclusion_section),
-
-                excluded_medications=self._extract_medications(exclusion_section),
-
-                bmi_min=self._extract_bmi_min(inclusion_section),
-
-                bmi_max=self._extract_bmi_max(inclusion_section)
-
-            )
-
-            self.logger.info(f"[TrialParserAgent] Parsing completed for {trial_id}")
-
-            return {
-
-                "success": True,
-
-                "trial_id": trial_id,
-
-                "criteria": criteria.model_dump(),
-
-                "inclusion_text": inclusion_section,
-
-                "exclusion_text": exclusion_section
-            }
+            self.logger.info(f"[TrialParserAgent] Batch parsing completed: {len(results)} trials")
+            return results
 
         except Exception as e:
-
-            self.logger.error(f"[TrialParserAgent] Failed: {str(e)}")
-
-            return {
-
-                "success": False,
-
-                "trial_id": trial_id,
-
-                "error": str(e)
-            }
-
-    def _extract_section(self, text: str, section_type: str) -> str:
-
-        text_lower = text.lower()
-
-        if section_type == "inclusion":
-
-            match = re.search(
-                r"inclusion\s*criteria[:\-]?(.*?)(?:exclusion\s*criteria|$)",
-                text_lower,
-                re.DOTALL
-            )
-
-        else:
-
-            match = re.search(
-                r"exclusion\s*criteria[:\-]?(.*)",
-                text_lower,
-                re.DOTALL
-            )
-
-        return match.group(1) if match else text_lower
-
-    def _extract_age_min(self, text: str):
-
-        patterns = [
-
-            r"(\d+)\s*(?:-|to)\s*\d+",
-
-            r"(?:age\s*>=?|over|older\s*than)\s*(\d+)"
-        ]
-
-        for p in patterns:
-
-            m = re.findall(p, text)
-
-            if m:
-                return int(m[0])
-
-        return None
-
-    def _extract_age_max(self, text: str):
-
-        patterns = [
-
-            r"\d+\s*(?:-|to)\s*(\d+)",
-
-            r"(?:under|below|<=?)\s*(\d+)"
-        ]
-
-        for p in patterns:
-
-            m = re.findall(p, text)
-
-            if m:
-                return int(m[0])
-
-        return None
-
-    def _extract_gender(self, text: str) -> List[str]:
-
-        genders = []
-
-        if re.search(r"\bmale\b", text):
-
-            genders.append("M")
-
-        if re.search(r"\bfemale\b", text):
-
-            genders.append("F")
-
-        return genders
-
-    def _extract_conditions(self, text: str) -> List[str]:
-
-        disease_keywords = {
-
-            r"type\s*2\s*diabetes": "Type 2 Diabetes",
-
-            r"hypertension": "Hypertension",
-
-            r"heart\s*disease": "Heart Disease",
-
-            r"asthma": "Asthma",
-
-            r"cancer": "Cancer",
-
-            r"copd": "COPD"
-        }
-
-        conditions = []
-
-        for pattern, disease in disease_keywords.items():
-
-            if re.search(pattern, text):
-
-                conditions.append(disease)
-
-        return conditions
-
-    def _extract_medications(self, text: str) -> List[str]:
-
-        meds = [
-
-            "metformin",
-            "insulin",
-            "warfarin",
-            "aspirin"
-        ]
-
-        found = []
-
-        for med in meds:
-
-            if med in text:
-
-                found.append(med.title())
-
-        return found
-
-    def _extract_bmi_min(self, text: str):
-
-        m = re.findall(r"bmi\s*(\d+\.?\d*)\s*(?:-|to)", text)
-
-        return float(m[0]) if m else None
-
-    def _extract_bmi_max(self, text: str):
-
-        m = re.findall(r"bmi\s*\d+\.?\d*\s*(?:-|to)\s*(\d+\.?\d*)", text)
-
-        return float(m[0]) if m else None
+            self.logger.error(f"[TrialParserAgent] Batch parsing failed: {str(e)}")
+            return []
 
     def get_info(self):
-
         return {
-
             "agent_id": self.agent_id,
-
             "role": self.role,
-
-            "method": "Regex based criteria extraction"
+            "method": "Gemini LLM criteria extraction",
         }
 
 

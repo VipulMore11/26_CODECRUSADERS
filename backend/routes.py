@@ -78,7 +78,7 @@ def analyze_patient_trials():
         # -----------------------------
         else:
 
-            data = request.get_json()
+            data = request.get_json(silent=True)
 
             if not data:
                 return jsonify({"error": "No input provided"}), 400

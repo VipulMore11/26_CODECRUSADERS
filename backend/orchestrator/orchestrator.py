@@ -184,32 +184,39 @@ class ClinicalTrialOrchestrator:
             workflow_state.step = "trial_parsing"
 
             # -----------------------------
-            # STEP 5 – TRIAL PARSING
+            # STEP 5 – TRIAL PARSING (batched – single LLM call)
             # -----------------------------
 
-            self.logger.info(f"{workflow_id}: Step 5 - Trial Parsing")
+            self.logger.info(f"{workflow_id}: Step 5 - Trial Parsing (batch)")
 
-            parsed_trials = []
-
+            trials_to_parse = []
             for trial_data in scraped_trials:
-
                 eligibility_text = f"""
                 Inclusion: Patients aged {trial_data.get('age_min')} to {trial_data.get('age_max')}
                 with {', '.join(trial_data.get('included_conditions', []))}.
                 """
+                trials_to_parse.append({
+                    "trial_id": trial_data.get("trial_id"),
+                    "eligibility_text": eligibility_text,
+                })
 
-                trial_parse_result = await self.trial_parser_agent.parse_trial_eligibility(
-                    eligibility_text,
-                    trial_data.get("trial_id")
-                )
+            parse_results = await self.trial_parser_agent.parse_all_trials(trials_to_parse)
 
-                if trial_parse_result.get("success"):
+            # Build a lookup from trial_id -> parsed criteria
+            parsed_criteria_map = {
+                r.get("trial_id"): r for r in parse_results if r.get("success")
+            }
 
+            parsed_trials = []
+            for trial_data in scraped_trials:
+                trial_id = trial_data.get("trial_id")
+                trial_parse_result = parsed_criteria_map.get(trial_id)
+                if trial_parse_result:
                     criteria = TrialCriteria(**trial_parse_result.get("criteria", {}))
 
                     trial = ClinicalTrial(
 
-                        trial_id=trial_data.get("trial_id"),
+                        trial_id=trial_id,
 
                         trial_name=trial_data.get("trial_name"),
 
@@ -304,25 +311,110 @@ class ClinicalTrialOrchestrator:
 
             workflow_state.updated_at = datetime.utcnow()
 
-            return {
+            # ---- Build frontend-shaped response ----
 
-                "success": True,
+            # Lookup maps for enriching match data
+            scraped_map = {t.get("trial_id"): t for t in scraped_trials}
+            explanation_map = {}
+            for exp in explanations.get("explanations", []):
+                explanation_map[exp.get("trial_id")] = exp
 
-                "workflow_id": workflow_id,
-
+            # Patient object
+            patient = {
                 "patient_id": patient_id,
+                "age": anonymized_profile.get("age"),
+                "gender": anonymized_profile.get("gender"),
+                "conditions": anonymized_profile.get("conditions", []),
+                "medications": anonymized_profile.get("medications", []),
+                "allergies": anonymized_profile.get("allergies", []),
+            }
 
-                "matches": matching_result.get("matches", []),
+            # Trial matches array
+            trial_matches = []
+            for match in matching_result.get("matches", []):
+                tid = match.get("trial_id")
+                scraped = scraped_map.get(tid, {})
+                explanation = explanation_map.get(tid, {})
 
-                "explanations": explanations.get("explanations", []),
+                # Resolve nct_id: prefer tid if NCT-prefixed, else check scraped data
+                nct_id = None
+                if tid and tid.upper().startswith("NCT"):
+                    nct_id = tid
+                elif scraped.get("nct_id"):
+                    nct_id = scraped.get("nct_id")
 
-                "report": report_result.get("report_json"),
+                # Derive clinical_trials_url from resolved nct_id
+                clinical_trials_url = (
+                    f"https://clinicaltrials.gov/study/{nct_id}" if nct_id else None
+                )
 
+                # long_term_effects from the LLM explanation agent
+                long_term_effects = explanation.get("long_term_effects", [])
+
+                trial_matches.append({
+                    "trial_id": tid,
+                    "nct_id": nct_id,
+                    "trial_name": match.get("trial_name"),
+                    "phase": scraped.get("phase"),
+                    "match_score": match.get("eligibility_score"),
+                    "confidence_score": match.get("eligibility_score"),
+                    "is_eligible": match.get("is_eligible"),
+                    "sponsor": scraped.get("source", "ClinicalTrials.gov"),
+                    "study_type": "Interventional",
+                    "disease_category": ", ".join(scraped.get("included_conditions", [])),
+                    "location": scraped.get("location"),
+                    "distance_miles": None,
+                    "duration_months": scraped.get("duration_months"),
+                    "eligibility": {
+                        "matched_criteria": match.get("matched_criteria", []),
+                        "requires_verification": match.get("unmatched_criteria", []),
+                        "excluded_criteria": [],
+                    },
+                    "risks": {
+                        "potential_risks": match.get("risk_factors", []),
+                        "side_effects": scraped.get("side_effects", []),
+                        "long_term_effects": long_term_effects,
+                    },
+                    "details": {
+                        "intervention": scraped.get("drug_name"),
+                        "compensation": None,
+                        "trial_duration": f"{scraped.get('duration_months', 'N/A')} months",
+                        "locations": [scraped.get("location")] if scraped.get("location") else [],
+                        "study_contacts": [],
+                        "study_summary": scraped.get("description", ""),
+                    },
+                    "actions": {
+                        "clinical_trials_url": clinical_trials_url,
+                        "can_express_interest": True,
+                        "alerts_available": True,
+                    },
+                    "explanation": {
+                        "summary": explanation.get("summary", ""),
+                        "overall_assessment": explanation.get("overall_assessment", ""),
+                        "next_steps": explanation.get("next_steps", ""),
+                        "detailed_explanations": explanation.get("detailed_explanations", []),
+                    },
+                })
+
+            # Report object
+            report_json = report_result.get("report_json", {})
+            report = {
                 "report_id": report_result.get("report_id"),
+                "executive_summary": report_json.get("executive_summary", ""),
+                "patient_summary": report_json.get("patient_summary", ""),
+                "trial_recommendations": report_json.get("trial_recommendations", []),
+                "risk_summary": report_json.get("risk_summary", ""),
+                "conclusion": report_json.get("conclusion", ""),
+            }
 
+            return {
+                "success": True,
+                "workflow_id": workflow_id,
+                "status": ProcessingStatus.COMPLETED,
                 "processing_time_ms": processing_time,
-
-                "status": ProcessingStatus.COMPLETED
+                "patient": patient,
+                "trial_matches": trial_matches,
+                "report": report,
             }
 
         except Exception as e:

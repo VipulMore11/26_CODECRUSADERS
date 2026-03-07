@@ -1,45 +1,91 @@
 import uuid
+import json
 import httpx
 from typing import Dict, Any, List
 from loguru import logger
+from utils.gemini_client import generate_json
+
+STUDY_PARSER_SYSTEM_PROMPT = """You are a clinical trial data parser. Your job is to convert raw
+ClinicalTrials.gov API study data into clean, structured trial formats.
+
+You will receive an array of raw study objects. Return a JSON array with one object per study.
+Each object must have these exact keys:
+{
+  "trial_id": "<NCT ID>",
+  "trial_name": "<brief title>",
+  "description": "<official title or brief description>",
+  "phase": "<Phase 1|Phase 2|Phase 3|Phase 4|Not Applicable>",
+  "status": "recruiting",
+  "included_conditions": ["<condition1>", ...],
+  "age_min": <integer, default 18>,
+  "age_max": <integer, default 75>,
+  "location": "<primary location or 'Multiple Locations'>",
+  "drug_name": "<intervention name or 'Investigational Drug'>",
+  "drug_class": "<drug class or 'Therapeutic'>",
+  "side_effects": ["<known side effect>", ...],
+  "enrollment_target": <integer>,
+  "duration_months": <integer estimate>,
+  "source": "ClinicalTrials.gov"
+}
+
+Rules:
+- Return one object per input study, in the same order.
+- Extract all available fields from the raw study data.
+- If a field is missing, use sensible defaults.
+- For age_min/age_max, parse strings like "18 Years" into integers.
+- For side_effects, if none listed, use ["Study specific"].
+- Return ONLY a valid JSON array."""
+
+FALLBACK_TRIALS_SYSTEM_PROMPT = """You are a clinical trial data specialist. When the ClinicalTrials.gov
+API is unavailable, generate realistic mock clinical trial data for testing purposes.
+
+You will receive a patient condition. Return a JSON array of 2-3 realistic trial objects:
+[
+  {
+    "trial_id": "<MOCK-xxxxxx>",
+    "trial_name": "<realistic trial name for the condition>",
+    "description": "<realistic trial description>",
+    "phase": "<Phase 2 or Phase 3>",
+    "status": "recruiting",
+    "included_conditions": ["<condition>"],
+    "age_min": <integer>,
+    "age_max": <integer>,
+    "location": "<realistic location>",
+    "drug_name": "<realistic drug name>",
+    "drug_class": "<drug class>",
+    "side_effects": ["<side effect>", ...],
+    "enrollment_target": <integer>,
+    "duration_months": <integer>,
+    "source": "Mock Data"
+  }
+]
+
+Rules:
+- Make the trials medically realistic for the given condition.
+- Use varied phases, locations, and drug names.
+- Generate unique MOCK-xxxxxx IDs.
+- Return ONLY a valid JSON array."""
 
 
 class WebScrapingAgent:
     """
     Agent responsible for discovering clinical trials from ClinicalTrials.gov
-    based on patient conditions.
-
-    Uses ClinicalTrials.gov API v2.
+    based on patient conditions. Uses Gemini LLM for study data parsing and
+    fallback trial generation.
     """
 
     def __init__(self):
-
         self.logger = logger
         self.agent_id = "web_scraping_agent"
         self.role = "Clinical Trial Discovery Specialist"
-
         self.base_url = "https://clinicaltrials.gov/api/v2/studies"
 
     async def scrape_clinical_trials(self, patient_data: Dict[str, Any]) -> Dict[str, Any]:
-
-        """
-        Search ClinicalTrials.gov for relevant trials.
-
-        Args:
-            patient_data: anonymized patient profile
-
-        Returns:
-            Dict containing list of discovered trials
-        """
-
         self.logger.info("[WebScrapingAgent] Searching clinical trials")
 
         try:
-
             conditions = patient_data.get("conditions", [])
-
             if not conditions:
-
                 return {
                     "trials": [],
                     "total_found": 0,
@@ -49,12 +95,9 @@ class WebScrapingAgent:
             primary_condition = conditions[0].lower()
 
             params = {
-
                 "query.cond": primary_condition,
-
                 "filter.overallStatus": "RECRUITING",
-
-                "pageSize": 10
+                "pageSize": 10,
             }
 
             self.logger.info(
@@ -62,249 +105,88 @@ class WebScrapingAgent:
             )
 
             async with httpx.AsyncClient(timeout=15) as client:
-
                 response = await client.get(self.base_url, params=params)
-
                 response.raise_for_status()
-
                 data = response.json()
 
             trials = []
+            studies = data.get("studies", [])
+            if studies:
+                trials = self._process_all_studies(studies)
 
-            for study in data.get("studies", []):
-
-                trial = self._process_study_data(study)
-
-                if trial:
-                    trials.append(trial)
-
-            self.logger.info(
-                f"[WebScrapingAgent] Found {len(trials)} trials"
-            )
+            self.logger.info(f"[WebScrapingAgent] Found {len(trials)} trials")
 
             return {
-
                 "trials": trials,
-
                 "total_found": len(trials),
-
                 "search_condition": primary_condition,
-
-                "source": "ClinicalTrials.gov API"
+                "source": "ClinicalTrials.gov API",
             }
 
         except Exception as e:
-
             self.logger.warning(
                 f"[WebScrapingAgent] API failed, using fallback trials: {str(e)}"
             )
-
             return self._create_fallback_trials(patient_data)
 
-    def _process_study_data(self, study: Dict[str, Any]) -> Dict[str, Any]:
-
-        """
-        Convert API study response into internal trial format.
-        """
-
+    def _process_all_studies(self, studies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Use a single Gemini LLM call to parse all studies at once."""
         try:
-
-            protocol = study.get("protocolSection", {})
-
-            identification = protocol.get("identificationModule", {})
-
-            conditions_module = protocol.get("conditionsModule", {})
-
-            eligibility = protocol.get("eligibilityModule", {})
-
-            design = protocol.get("designModule", {})
-
-            trial = {
-
-                "trial_id": identification.get(
-                    "nctId", f"NCT-{uuid.uuid4().hex[:8]}"
-                ),
-
-                "trial_name": identification.get(
-                    "briefTitle", "Unknown Trial"
-                ),
-
-                "description": identification.get(
-                    "officialTitle", ""
-                ),
-
-                "phase": (
-                    design.get("phases", ["Phase 3"])[0]
-                    if design.get("phases")
-                    else "Phase 3"
-                ),
-
-                "status": "recruiting",
-
-                "included_conditions": conditions_module.get("conditions", []),
-
-                "age_min": self._extract_age_min(eligibility),
-
-                "age_max": self._extract_age_max(eligibility),
-
-                "location": "Multiple Locations",
-
-                "drug_name": "Investigational Drug",
-
-                "drug_class": "Therapeutic",
-
-                "side_effects": ["Study specific"],
-
-                "enrollment_target": 100,
-
-                "duration_months": 12,
-
-                "source": "ClinicalTrials.gov"
-            }
-
-            return trial
-
+            prompt = f"Parse these {len(studies)} ClinicalTrials.gov studies into structured format:\n\n{json.dumps(studies, indent=2, default=str)}"
+            result = generate_json(STUDY_PARSER_SYSTEM_PROMPT, prompt)
+            if isinstance(result, list):
+                return [t for t in result if t]
+            return [result] if result else []
         except Exception as e:
-
-            self.logger.warning(
-                f"[WebScrapingAgent] Failed to process study: {str(e)}"
-            )
-
-            return None
-
-    def _extract_age_min(self, eligibility: Dict[str, Any]) -> int:
-
-        try:
-
-            min_age = eligibility.get("minimumAge", "18 Years")
-
-            import re
-
-            match = re.search(r"\d+", min_age)
-
-            return int(match.group()) if match else 18
-
-        except:
-            return 18
-
-    def _extract_age_max(self, eligibility: Dict[str, Any]) -> int:
-
-        try:
-
-            max_age = eligibility.get("maximumAge", "75 Years")
-
-            import re
-
-            match = re.search(r"\d+", max_age)
-
-            return int(match.group()) if match else 75
-
-        except:
-            return 75
+            self.logger.warning(f"[WebScrapingAgent] Failed to process studies: {str(e)}")
+            return []
 
     def _create_fallback_trials(self, patient_data: Dict[str, Any]) -> Dict[str, Any]:
-
-        """
-        Generate mock trials if API fails.
-        """
-
+        """Use Gemini LLM to generate realistic fallback trials."""
         conditions = patient_data.get("conditions", [])
+        primary_condition = conditions[0] if conditions else "general condition"
 
-        primary_condition = conditions[0] if conditions else "condition"
-
-        mock_trials = [
-
-            {
-
-                "trial_id": f"MOCK-{uuid.uuid4().hex[:6]}",
-
-                "trial_name": f"{primary_condition.title()} Treatment Study",
-
-                "description": f"Clinical trial studying {primary_condition}",
-
-                "phase": "Phase 3",
-
-                "status": "recruiting",
-
-                "included_conditions": [primary_condition],
-
-                "age_min": 18,
-
-                "age_max": 75,
-
-                "location": "Multiple locations",
-
-                "drug_name": "Investigational Drug",
-
-                "drug_class": "Therapeutic",
-
-                "side_effects": ["Nausea", "Fatigue"],
-
-                "enrollment_target": 200,
-
-                "duration_months": 24,
-
-                "source": "Mock Data"
-            },
-
-            {
-
-                "trial_id": f"MOCK-{uuid.uuid4().hex[:6]}",
-
-                "trial_name": f"Advanced {primary_condition.title()} Study",
-
-                "description": f"Advanced treatment research for {primary_condition}",
-
-                "phase": "Phase 2",
-
-                "status": "recruiting",
-
-                "included_conditions": [primary_condition],
-
-                "age_min": 25,
-
-                "age_max": 65,
-
-                "location": "Research centers",
-
-                "drug_name": "Novel Compound",
-
-                "drug_class": "Experimental",
-
-                "side_effects": ["Headache", "Dizziness"],
-
-                "enrollment_target": 150,
-
-                "duration_months": 18,
-
-                "source": "Mock Data"
-            }
-        ]
+        try:
+            prompt = f"Generate realistic mock clinical trials for a patient with: {primary_condition}"
+            mock_trials = generate_json(FALLBACK_TRIALS_SYSTEM_PROMPT, prompt)
+            if not isinstance(mock_trials, list):
+                mock_trials = [mock_trials]
+        except Exception as e:
+            self.logger.warning(f"[WebScrapingAgent] Fallback LLM failed: {str(e)}")
+            mock_trials = [
+                {
+                    "trial_id": f"MOCK-{uuid.uuid4().hex[:6]}",
+                    "trial_name": f"{primary_condition.title()} Treatment Study",
+                    "description": f"Clinical trial studying {primary_condition}",
+                    "phase": "Phase 3",
+                    "status": "recruiting",
+                    "included_conditions": [primary_condition],
+                    "age_min": 18,
+                    "age_max": 75,
+                    "location": "Multiple locations",
+                    "drug_name": "Investigational Drug",
+                    "drug_class": "Therapeutic",
+                    "side_effects": ["Nausea", "Fatigue"],
+                    "enrollment_target": 200,
+                    "duration_months": 24,
+                    "source": "Mock Data",
+                }
+            ]
 
         return {
-
             "trials": mock_trials,
-
             "total_found": len(mock_trials),
-
             "search_condition": primary_condition,
-
-            "fallback": True
+            "fallback": True,
         }
 
     def get_info(self) -> Dict[str, str]:
-
         return {
-
             "agent_id": self.agent_id,
-
             "role": self.role,
-
             "data_source": "ClinicalTrials.gov",
-
-            "method": "Condition based trial discovery",
-
-            "async_supported": True
+            "method": "Gemini LLM trial parsing",
+            "async_supported": True,
         }
 
 

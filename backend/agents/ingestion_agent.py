@@ -4,12 +4,13 @@ import json
 import base64
 import pandas as pd
 import pdfplumber
-import pytesseract
 from PIL import Image
 from io import BytesIO
 
 from models.schemas import PatientDataInput
+import pytesseract
 
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 class IngestionAgent:
     """
