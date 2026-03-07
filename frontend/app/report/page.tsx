@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,6 +30,8 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react"
+import type { ApiResponse } from "@/lib/api"
+import { generateReportPdf } from "@/lib/generate-pdf"
 
 const reportSections = [
   {
@@ -84,6 +86,14 @@ export default function ReportPage() {
   const [generationProgress, setGenerationProgress] = useState(0)
   const [reportReady, setReportReady] = useState(false)
   const [includePersonalInfo, setIncludePersonalInfo] = useState(false)
+  const [apiData, setApiData] = useState<ApiResponse | null>(null)
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("apiResponse")
+    if (stored) {
+      setApiData(JSON.parse(stored))
+    }
+  }, [])
 
   const toggleSection = (sectionId: string) => {
     const section = reportSections.find((s) => s.id === sectionId)
@@ -119,10 +129,10 @@ export default function ReportPage() {
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/treatments">
+            <Link href="/results">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
+                Back to Results
               </Button>
             </Link>
             <Separator orientation="vertical" className="h-6" />
@@ -300,6 +310,7 @@ export default function ReportPage() {
             <ReportPreview
               sections={selectedSections}
               includePersonalInfo={includePersonalInfo}
+              apiData={apiData}
               onReset={() => {
                 setReportReady(false)
                 setGenerationProgress(0)
@@ -315,12 +326,23 @@ export default function ReportPage() {
 function ReportPreview({
   sections,
   includePersonalInfo,
+  apiData,
   onReset,
 }: {
   sections: string[]
   includePersonalInfo: boolean
+  apiData: ApiResponse | null
   onReset: () => void
 }) {
+  const handleDownloadPdf = () => {
+    if (!apiData) return
+    generateReportPdf(apiData, sections, includePersonalInfo)
+  }
+
+  const handlePrint = () => {
+    if (!apiData) return
+    generateReportPdf(apiData, sections, includePersonalInfo)
+  }
   return (
     <div className="space-y-6">
       {/* Success Banner */}
@@ -377,7 +399,7 @@ function ReportPreview({
               </div>
               <div className="text-right text-sm">
                 <p className="text-muted-foreground">Report ID</p>
-                <p className="font-mono text-xs">RPT-2024-{Math.random().toString(36).substr(2, 8).toUpperCase()}</p>
+                <p className="font-mono text-xs">{apiData?.report.report_id ?? "N/A"}</p>
               </div>
             </div>
 
@@ -387,13 +409,17 @@ function ReportPreview({
               <div>
                 <p className="text-xs text-muted-foreground">Patient</p>
                 <p className="font-medium">
-                  {includePersonalInfo ? "John Smith" : "Anonymous Patient"}
+                  {includePersonalInfo
+                    ? (apiData?.patient.patient_id ?? "Anonymous Patient")
+                    : "Anonymous Patient"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Date of Birth</p>
+                <p className="text-xs text-muted-foreground">Age / Gender</p>
                 <p className="font-medium">
-                  {includePersonalInfo ? "March 15, 1980" : "Redacted"}
+                  {apiData
+                    ? `${apiData.patient.age} years / ${apiData.patient.gender}`
+                    : "N/A"}
                 </p>
               </div>
               <div>
@@ -451,7 +477,7 @@ function ReportPreview({
         </Button>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
             Print
           </Button>
@@ -463,7 +489,7 @@ function ReportPreview({
             <Share2 className="mr-2 h-4 w-4" />
             Share
           </Button>
-          <Button>
+          <Button onClick={handleDownloadPdf} disabled={!apiData}>
             <Download className="mr-2 h-4 w-4" />
             Download PDF
           </Button>
