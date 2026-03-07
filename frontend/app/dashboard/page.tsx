@@ -115,18 +115,22 @@ export default function DashboardPage() {
 
   const handleFileAnalysis = () => {
     if (files.length > 0) {
-      setIsAnalyzing(true)
-      // Store info and redirect to results
-      sessionStorage.setItem("analysisType", "file")
-      sessionStorage.setItem("patientId", patientId)
-      setTimeout(() => {
+      // Store the file in sessionStorage as base64 so results page can send the API request
+      const reader = new FileReader()
+      reader.onload = () => {
+        sessionStorage.setItem("analysisType", "file")
+        sessionStorage.setItem("pendingFile", reader.result as string)
+        sessionStorage.setItem("pendingFileName", files[0].name)
+        sessionStorage.setItem("pendingFileType", files[0].type)
+        sessionStorage.removeItem("apiResponse")
         router.push("/results")
-      }, 2000)
+      }
+      reader.readAsDataURL(files[0])
     }
   }
 
   const handleManualSubmit = () => {
-    const patientData = {
+    const payload = {
       patientId,
       age: parseInt(age),
       gender,
@@ -137,7 +141,8 @@ export default function DashboardPage() {
       notes,
     }
     sessionStorage.setItem("analysisType", "manual")
-    sessionStorage.setItem("patientData", JSON.stringify(patientData))
+    sessionStorage.setItem("pendingPatientData", JSON.stringify(payload))
+    sessionStorage.removeItem("apiResponse")
     router.push("/results")
   }
 
@@ -506,12 +511,21 @@ export default function DashboardPage() {
 
                 <Button
                   onClick={handleManualSubmit}
-                  disabled={!isManualFormValid}
+                  disabled={!isManualFormValid || isAnalyzing}
                   className="w-full gap-2"
                   size="lg"
                 >
-                  Find Matching Trials
-                  <ArrowRight className="h-4 w-4" />
+                  {isAnalyzing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      Find Matching Trials
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </TabsContent>
             </Tabs>
